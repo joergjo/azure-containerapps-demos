@@ -1,0 +1,69 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-08-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "defaultValue": "northcentralusstage",
+      "type": "String"
+    },
+    "environmentId": {
+      "defaultValue": "",
+      "type": "String"
+    },
+    "showVersion": {
+      "defaultValue": "false",
+      "type": "String"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "name": "helloworld",
+      "type": "Microsoft.Web/containerApps",
+      "apiVersion": "2021-03-01",
+      "kind": "containerapp",
+      "location": "[parameters('location')]",
+      "properties": {
+        "kubeEnvironmentId": "[parameters('environmentId')]",
+        "configuration": {
+          "activeRevisionsMode": "single",
+          "ingress": {
+            "external": true,
+            "targetPort": 5000
+          }
+        },
+        "template": {
+          "containers": [
+            {
+              "image": "joergjo/go-helloworld:v1",
+              "name": "helloworld",
+              "env": [
+                {
+                  "name": "HELLOWORLD_ADD_VERSION",
+                  "value": "[parameters('showVersion')]"
+                }
+              ]
+            }
+          ],
+          "scale": {
+            "minReplicas": 2,
+            "maxReplicas": 4,
+            "rules": [
+              {
+                "name": "httpscalingrule",
+                "http": {
+                  "metadata": {
+                    "concurrentRequests": "100"
+                  }
+                }
+              }
+            ]
+          },
+          "dapr": {
+            "enabled": false
+          }
+        }
+      }
+    }
+  ]
+}
