@@ -3,10 +3,10 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "location": {
-            "defaultValue": "northcentralusstage",
+            "defaultValue": "northeurope",
             "type": "String"
         },
-        "environmentId": {
+        "environmentName": {
             "defaultValue": "",
             "type": "String"
         },
@@ -28,7 +28,7 @@
             "kind": "containerapp",
             "location": "[parameters('location')]",
             "properties": {
-                "kubeEnvironmentId": "[parameters('environmentId')]",
+                "kubeEnvironmentId": "[resourceId('Microsoft.Web/kubeEnvironments', parameters('environmentName'))]",
                 "configuration": {
                     "activeRevisionsMode": "single",
                     "secrets": [
