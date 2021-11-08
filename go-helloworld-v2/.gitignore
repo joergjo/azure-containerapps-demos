@@ -1,2 +1,3 @@
 go-helloworld
 *.exe
+azuredeploy.parameters.json

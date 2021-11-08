@@ -6,7 +6,7 @@
       "defaultValue": "northeurope",
       "type": "String"
     },
-    "environmentId": {
+    "environmentName": {
       "defaultValue": "",
       "type": "String"
     },
@@ -24,7 +24,7 @@
       "kind": "containerapp",
       "location": "[parameters('location')]",
       "properties": {
-        "kubeEnvironmentId": "[parameters('environmentId')]",
+        "kubeEnvironmentId": "[resourceId('Microsoft.Web/kubeEnvironments', parameters('environmentName'))]",
         "configuration": {
           "activeRevisionsMode": "multiple",
           "ingress": {
