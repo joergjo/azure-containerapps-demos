@@ -1,9 +1,9 @@
 #!/bin/bash
 
-resource_group_name="containerapps"
+resource_group_name="webcast"
 location="northeurope"
-la_workspace_name="containerapps-logs"
-containerapps_env="containerapps-01"
+la_workspace_name="webcast-logs"
+containerapps_env="webcast-01"
 
 az group create \
   --name $resource_group_name \
