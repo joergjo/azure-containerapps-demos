@@ -1,0 +1,31 @@
+version: "3.9"
+
+volumes:
+  todo-data:
+
+services:
+  todo-api:
+    build:
+      context: .
+      dockerfile: ${DOCKERFILE:-Dockerfile.buildkit}
+    image: java-boot-todo:${TAG:-dev}
+    command: ["--spring.profiles.active=dev"]
+    ports:
+      - "8080:8080"
+      - "4004:4004"
+    environment:
+      - POSTGRESQL_HOST=postgresql-db
+      - POSTGRESQL_USERNAME=postgres
+      - POSTGRESQL_PASSWORD=pass@word1
+    depends_on:
+      - postgresql-db
+
+  todo-db:
+    image: postgres:${POSTGRES_TAG:-13-alpine}
+    ports:
+      - "5432:5432"
+    volumes:
+      - todo-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=pass@word1
+      - POSTGRES_DB=demo

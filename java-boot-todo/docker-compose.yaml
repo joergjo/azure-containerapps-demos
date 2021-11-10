@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  todo-api:
+    build:
+      context: .
+      dockerfile: ${DOCKERFILE:-Dockerfile.buildkit}
+    image: java-boot-todo:${TAG:-latest}
+    # Optional: Enable structured logging 
+    # command: ["--spring.profiles.active=json-logging"]
+    ports:
+      - 8080:8080
+      - 4004:4004
+    environment:
+      - POSTGRESQL_HOST=${POSTGRESQL_HOST}
+      - POSTGRESQL_USERNAME=${POSTGRESQL_USERNAME}
+      - POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
