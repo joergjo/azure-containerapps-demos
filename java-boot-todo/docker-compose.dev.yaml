@@ -14,7 +14,7 @@ services:
       - "8080:8080"
       - "4004:4004"
     environment:
-      - POSTGRESQL_HOST=postgresql-db
+      - POSTGRESQL_HOST=todo-db
       - POSTGRESQL_USERNAME=postgres
       - POSTGRESQL_PASSWORD=pass@word1
     depends_on:
