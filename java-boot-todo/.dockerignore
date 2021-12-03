@@ -7,3 +7,4 @@ target
 docker-compose*.yaml
 Dockerfile*
 mvnw.cmd
+.sdkmanrc

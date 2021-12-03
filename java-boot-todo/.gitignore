@@ -34,3 +34,6 @@ build/
 
 ### ARM Templates
 azuredeploy.parameters.json
+
+### SDKMAN ###
+.sdkmanrc
