@@ -1,6 +1,6 @@
 #!/bin/bash
 ################################################################################
-# create a file "todo.env" in the same directory as todo.sh and set these values
+# create a file "run.env" in the same directory as todo.sh and set these values
 
 # BASE_NAME=[name prefix for Azure resources]
 # LOCATION=[northeurope or any other supported region]
@@ -15,7 +15,7 @@
 # TAG=[container image tag, optional]
 ################################################################################
 
-export $(grep -v "^#" todo.env | xargs)
+export $(grep -v "^#" run.env | xargs)
 resource_group_name=$BASE_NAME
 la_workspace_name=$BASE_NAME-logs
 containerapps_env_name=$BASE_NAME-env
