@@ -1,6 +1,6 @@
 #!/bin/bash
 name=helloworld
-resource_group_name=containerapps-preview
+resource_group_name=containerapps
 
 az deployment group create \
     --resource-group $resource_group_name \
