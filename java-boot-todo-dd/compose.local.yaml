@@ -1,0 +1,63 @@
+version: "3.9"
+
+networks:
+  sb-todo:
+
+volumes:
+  sb-todo-data:
+
+
+services:
+  sb-todo-api:
+    build:
+      context: .
+      dockerfile: ${DOCKERFILE:-Dockerfile.buildkit}
+    image: java-boot-todo:${TAG:-latest}
+    ports:
+      - "8080:8080"
+      - "4004:4004"
+    environment:
+      # Enable structured logging
+      # - SPRING_PROFILES_ACTIVE=dev,json-logging
+      - SPRING_PROFILES_ACTIVE=dev
+      - POSTGRESQL_HOST=sb-todo-db
+      - POSTGRESQL_USERNAME=postgres
+      - POSTGRESQL_PASSWORD=pass@word1
+      - DD_ENV=${DD_ENV:-local}
+      - DD_SERVICE=${DD_SERVICE:-sb-todo-api}
+      - DD_VERSION=${DD_VERSION:-0.0.1}
+      - DD_AGENT_HOST=dd-agent
+      - DD_TRACE_AGENT_PORT=8126
+      - DD_PROFILING_ENABLED=true
+      - DD_TRACE_SAMPLE_RATE=1.0
+    networks:
+        - sb-todo
+    depends_on:
+      - dd-agent
+      - sb-todo-db
+
+  dd-agent:
+    image: datadog/agent:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup/:ro
+    environment:
+      - DD_API_KEY=${DD_API_KEY}
+      - DD_SITE=${DD_SITE:-datadoghq.eu}
+      - DD_APM_ENABLED=true
+      - DD_APM_NON_LOCAL_TRAFFIC=true
+    networks:
+      - sb-todo
+
+  sb-todo-db:
+    image: postgres:${POSTGRES_TAG:-13-alpine}
+    ports:
+      - "5432:5432"
+    volumes:
+      - sb-todo-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=pass@word1
+      - POSTGRES_DB=demo
+    networks:
+      - sb-todo

@@ -1,0 +1,100 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-08-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "defaultValue": "northeurope",
+      "type": "String"
+    },
+    "environmentName": {
+      "defaultValue": "",
+      "type": "String"
+    },
+    "ddApiKey": {
+      "defaultValue": "",
+      "type": "String"
+    },
+    "ddSite": {
+      "defaultValue": "datadoghq.eu",
+      "type": "String"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "name": "dd-agent-shared",
+      "type": "Microsoft.Web/containerApps",
+      "apiVersion": "2021-03-01",
+      "kind": "containerapp",
+      "location": "[parameters('location')]",
+      "properties": {
+        "kubeEnvironmentId": "[resourceId('Microsoft.Web/kubeEnvironments', parameters('environmentName'))]",
+        "configuration": {
+          "activeRevisionsMode": "multiple",
+          "ingress": {
+            "external": false,
+            "targetPort": 8126,
+            "allowInsecure": true
+          },
+          "secrets": [
+            {
+              "name": "dd-api-key",
+              "value": "[parameters('ddApiKey')]"
+            }
+          ]
+        },
+        "template": {
+          "containers": [
+            {
+              "image": "datadog/agent:latest",
+              "name": "dd-agent-shared",
+              "env": [
+                {
+                  "name": "DD_API_KEY",
+                  "secretRef": "dd-api-key"
+                },
+                {
+                  "name": "DD_SITE",
+                  "value": "[parameters('ddSite')]"
+                },
+                {
+                  "name": "DD_APM_ENABLED",
+                  "value": "true"
+                },
+                {
+                  "name": "DD_APM_NON_LOCAL_TRAFFIC",
+                  "value": "true"
+                },
+                {
+                  "name": "DD_PROCESS_AGENT_CONTAINER_SOURCE",
+                  "value": "docker"
+                }
+              ],
+              "resources": {
+                "cpu": 1.0,
+                "memory": "2Gi"
+              }
+            }
+          ],
+          "scale": {
+            "minReplicas": 1,
+            "maxReplicas": 2,
+            "rules": [
+              {
+                "name": "httpscalingrule",
+                "http": {
+                  "metadata": {
+                    "concurrentRequests": "100"
+                  }
+                }
+              }
+            ]
+          },
+          "dapr": {
+            "enabled": false
+          }
+        }
+      }
+    }
+  ]
+}

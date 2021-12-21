@@ -1,0 +1,155 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-08-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "defaultValue": "northeurope",
+      "type": "String"
+    },
+    "environmentName": {
+      "defaultValue": "",
+      "type": "String"
+    },
+    "postgresHost": {
+      "defaultValue": "",
+      "type": "String"
+    },
+    "postgresUser": {
+      "defaultValue": "",
+      "type": "String"
+    },
+    "postgresPassword": {
+      "defaultValue": "",
+      "type": "String"
+    },
+    "ddAgentHost": {
+      "defaultValue": "",
+      "type": "String"
+    },
+    "ddEnvironment": {
+      "defaultValue": "staging",
+      "type": "String"
+    },
+    "ddServiceName": {
+      "defaultValue": "sb-todo-api",
+      "type": "String"
+    },
+    "ddVersion": {
+      "defaultValue": "0.0.1",
+      "type": "String"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "name": "sb-todo-api",
+      "type": "Microsoft.Web/containerApps",
+      "apiVersion": "2021-03-01",
+      "kind": "containerapp",
+      "location": "[parameters('location')]",
+      "properties": {
+        "kubeEnvironmentId": "[resourceId('Microsoft.Web/kubeEnvironments', parameters('environmentName'))]",
+        "configuration": {
+          "activeRevisionsMode": "single",
+          "ingress": {
+            "external": true,
+            "targetPort": 8080
+          },
+          "secrets": [
+            {
+              "name": "postgres-host",
+              "value": "[parameters('postgresHost')]"
+            },
+            {
+              "name": "postgres-user",
+              "value": "[parameters('postgresUser')]"
+            },
+            {
+              "name": "postgres-pwd",
+              "value": "[parameters('postgresPassword')]"
+            }
+          ]
+        },
+        "template": {
+          "containers": [
+            {
+              "image": "joergjo/java-boot-todo:2.6.1-dd",
+              "name": "sb-todo-api",
+              "env": [
+                {
+                  "name": "POSTGRESQL_HOST",
+                  "secretref": "postgres-host"
+                },
+                {
+                  "name": "POSTGRESQL_USERNAME",
+                  "secretref": "postgres-user"
+                },
+                {
+                  "name": "POSTGRESQL_PASSWORD",
+                  "secretref": "postgres-pwd"
+                },
+                {
+                  "name": "SPRING_PROFILES_ACTIVE",
+                  "value": "json-logging,prod"
+                },
+                {
+                  "name": "DD_ENV",
+                  "value": "[parameters('ddEnvironment')]"
+                },
+                {
+                  "name": "DD_SERVICE",
+                  "value": "[parameters('ddServiceName')]"
+                },
+                {
+                  "name": "DD_VERSION",
+                  "value": "[parameters('ddVersion')]"
+                },
+                {
+                  "name": "DD_AGENT_HOST",
+                  "value": "[parameters('ddAgentHost')]"
+                },
+                {
+                  "name": "DD_TRACE_AGENT_PORT",
+                  "value": "80"
+                },
+                {
+                  "name": "DD_LOGS_INJECTION",
+                  "value": "true"
+                },
+                {
+                  "name": "DD_PROFILING_ENABLED",
+                  "value": "true"
+                },
+                {
+                  "name": "DD_TRACE_SAMPLE_RATE",
+                  "value": "1.0"
+                }
+              ],
+              "resources": {
+                "cpu": 1.0,
+                "memory": "2Gi"
+              }
+            }
+          ],
+          "scale": {
+            "minReplicas": 1,
+            "maxReplicas": 10,
+            "rules": [
+              {
+                "name": "httpscalingrule",
+                "http": {
+                  "metadata": {
+                    "concurrentRequests": "100"
+                  }
+                }
+              }
+            ]
+          },
+          "dapr": {
+            "enabled": false
+          }
+        }
+      }
+    }
+  ]
+}

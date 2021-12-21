@@ -1,0 +1,25 @@
+FROM eclipse-temurin:11-jre-focal AS base
+EXPOSE 8080
+
+FROM eclipse-temurin:11-jdk-focal AS build
+WORKDIR /build
+
+COPY mvnw  .
+COPY .mvn .mvn
+COPY pom.xml .
+RUN ./mvnw -B dependency:go-offline 
+
+COPY src src
+RUN ./mvnw -B clean package -DskipTests
+
+FROM base AS final
+WORKDIR /app
+RUN curl -s -L -o dd-java-agent.jar https://dtdg.co/latest-java-tracer
+COPY --from=build /build/target/java-boot-todo-*.jar java-boot-todo.jar
+ENTRYPOINT [ \
+    "java", \
+    "-javaagent:./dd-java-agent.jar", \ 
+    "-Ddd.profiling.enabled=true", \
+    "-XX:FlightRecorderOptions=stackdepth=256", \
+    "-jar", \
+    "java-boot-todo.jar"]
