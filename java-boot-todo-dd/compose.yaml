@@ -8,7 +8,7 @@ services:
     build:
       context: .
       dockerfile: ${DOCKERFILE:-Dockerfile.buildkit}
-    image: java-boot-todo:${TAG:-latest}
+    image: java-boot-todo-dd:${TAG:-latest}
     ports:
       - "8080:8080"
       - "4004:4004"
@@ -28,7 +28,7 @@ services:
       - DD_PROFILING_ENABLED=true
       - DD_TRACE_SAMPLE_RATE=1.0
     networks:
-        - sb-todo
+      - sb-todo
     depends_on:
       - dd-agent
 

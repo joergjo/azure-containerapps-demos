@@ -35,6 +35,8 @@ public class TodoApplication {
                         new Todo("test", "check if this is working", false),
                         new Todo("demo", "show to friends and family", false));
                 repository.saveAll(entities);
+            } else {
+                logger.info("Database already seeded");
             }
         };
     }
