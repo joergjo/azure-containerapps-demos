@@ -2,7 +2,7 @@
 
 This application is based on [this sample from Azure's Spring Boot docs](https://docs.microsoft.com/en-us/azure/developer/java/spring-framework/configure-spring-data-jpa-with-azure-postgresql) with all [CRUD scenarios implemented](https://github.com/joergjo/azure-containerapps-demos/blob/175fee5363e8b1199bcf28bb0e87f15c7d3f12cc/java-boot-todo-dd/src/main/java/com/example/containerapp/TodoController.java#L20) and the ability to [seed test data](https://github.com/joergjo/azure-containerapps-demos/blob/175fee5363e8b1199bcf28bb0e87f15c7d3f12cc/java-boot-todo-dd/src/main/java/com/example/containerapp/TodoApplication.java#L25) in an empty database for any Spring Profile other than `prod`.
 
-The most interesting addition is experimental support for [Datadog](https://www.datadoghq.com/) for dsitributed tracing. Note that this is _totally_ unsupported as of yet, unless your friendly Datadog support person tells you otherwise 😉. See [below](#datadog) for more details.
+The most interesting addition is experimental support for [Datadog](https://www.datadoghq.com/) for distributed tracing. Note that this is _totally_ unsupported as of yet, unless your friendly Datadog support person tells you otherwise 😉. See [below](#datadog) for more details.
 
 ## Prerequisites
 
