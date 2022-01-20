@@ -6,7 +6,7 @@ The most interesting addition is experimental support for [Datadog](https://www.
 
 ## Prerequisites
 
-- [Azure CLI 2.0](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
+- [Azure CLI 2.0](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) (**v2.30** or newer)
 - Azure Container App extension for Azure CLI
 
   `az extension add --source https://workerappscliextension.blob.core.windows.net/azure-cli-extension/containerapp-0.2.0-py2.py3-none-any.whl`
@@ -63,15 +63,15 @@ I have included the following Datadog configuration options for the application 
 # [Deploy to an Azure Container App](#deploy-to-azure)
 
 > All scripts are hard-coded to use Azure's North Europe region, because that's one of two regions
-> where Azure Container Apps are currently available. The alterantive is to deploy to Canada Central.
+> where Azure Container Apps are currently available. The alternative is to deploy to Canada Central.
 
-## Sidecar option
+## [Sidecar option](#sidecar)
 
 Run the `create_env.sh` script in the `deploy/app+sidecar` directory and provide your Datadog API Key as a parameter.
 
 ```
 $ cd deploy/app+sidecar
-$ ./deploy.sh <DATADOG_API_KEY>
+$ ./create_env.sh <DATADOG_API_KEY>
 ```
 
 This script will provision all required Azure resources to run the sample application contained in one resource group:
@@ -108,13 +108,25 @@ If you put some load on the application (e.g. using one of the tools mentioned a
 
 ![Datadog traces screenshot](media/datadog-traces.png "Datadog traces")
 
+## Shared agent option
+
+Run the `create_env.sh` script in the `deploy/app+agent` directory and provide your Datadog API Key as a parameter.
+
+```
+$ cd deploy/app+agent
+$ ./create_env.sh <DATADOG_API_KEY>
+```
+
+The remaining steps are the same as for the [sidecar](#sidecar) deployment scenario.
+
+
 ## CI/CD
 
 I have also included a very basic [Azure DevOps pipeline](.azure/azure-pipeline.yml) that builds the Docker container image and deploys the ARM template, so it roughly mimics running `docker compose build` and `deploy.sh`.
 
-Before you can use the pipeline, you must create an [empty target environment](https://docs.microsoft.com/en-us/azure/devops/pipelines/process/environments?view=azure-devops#create-an-environment). Even though Azure DevOps does not offer an environment type specifically for Azure Container Apps, you can use still use an _empty_ environment to track a Container Apps's deployment history. The `environment` variable (see below) in the provided pipeline must match the name of this target environment.
+Before you can use the pipeline, you must create an [_empty_ target environment](https://docs.microsoft.com/en-us/azure/devops/pipelines/process/environments?view=azure-devops#create-an-environment). Even though Azure DevOps does not offer an environment type specifically for Azure Container Apps, you can use still use an empty environment to track a Container Apps's deployment history. The `environment` variable (see below) in the provided pipeline must match the name of this target environment.
 
-To use my sample pipeline definition, you need to create a pipeline in Azure DevOps using the included YML file and set or update the following variables.
+To use my sample pipeline definition, create a pipeline in Azure DevOps using the included [`azure-pipelines.yml`](.azure/azure-pipelines.yml) file and set or update the following variables.
 
 | Name                              | Definition      | Use for                                                                                                                                                                                                                                                                                                                                                  |
 | --------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -129,6 +141,6 @@ To use my sample pipeline definition, you need to create a pipeline in Azure Dev
 | `resourceGroup`                   | Pipeline        | The resource group to deploy to                                                                                                                                                                                                                                                                                                                          |
 | `subscription`                    | Pipeline        | An [Azure Resource Manager service connection](https://docs.microsoft.com/en-us/azure/devops/pipelines/library/service-endpoints?view=azure-devops&tabs=yaml#azure-resource-manager-service-connection) to an Azure subscription or resource group. If the connection is scoped to a resource group, it must the same resource group as `resourceGroup`. |
 
-The pipeline is can be triggered either manually or with every commit to the `main` branch.
+The pipeline is triggered on every commit to the `main` branch, and can be run manually as well.
 
 ![Azure Pipelines screenshot](media/ado-pipeline.png "Azure Pipeline run")
