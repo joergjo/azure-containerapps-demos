@@ -10,6 +10,14 @@
       "defaultValue": "",
       "type": "String"
     },
+    "imageRepository": {
+      "defaultValue": "joergjo/java-boot-todo",
+      "type": "String"
+    },
+    "tag": {
+      "defaultValue": "latest",
+      "type": "String"
+    },
     "postgresHost": {
       "defaultValue": "",
       "type": "String"
@@ -57,7 +65,7 @@
         "template": {
           "containers": [
             {
-              "image": "joergjo/java-boot-todo",
+              "image": "[concat(parameters('imageRepository'), ':', parameters('tag'))]",
               "name": "sb-todo-api",
               "env": [
                 {

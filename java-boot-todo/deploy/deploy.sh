@@ -1,23 +1,49 @@
 #!/bin/bash
 
-# Before running this script, create a file "azuredeploy.parameters.json" in the same directory as azuredeploy.josn and deploy.sh and set these values
-# - location (optional)
-# - environmentName
-# - postgresHost
-# - postgresUsername
-# - postgresPassword
+if [[ -z "${CA_RESOURCE_GROUP}" ]]; then
+  echo "Please set the CA_RESOURCE_GROUP environment variable to the name of the resource group where the container application will be deployed"
+  exit 1
+fi
 
-name=sb-todo-api
-resource_group_name=containerapps
+if [[ ! -f "azuredeploy.parameters.json" ]]; then
+echo "Please create a file named 'azuredeploy.parameters.json' in the same directory as 'azuredeploy.json' and set the parameter values."
+echo
+echo "azuredeploy.parameters.json:"
+cat << EOF
+{
+  "\$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": {
+      "value": "<name of your Container Apps environment>"
+    },
+    "postgresHost": {
+      "value": "<FQDN of your PostgreSQL server>"
+    },
+    "postgresUser": {
+      "value": "<PostgreSQL user name>"
+    },
+    "postgresPassword": {
+      "value": "<PostgreSQL password>"
+    }
+  }
+}
+EOF
+
+exit 1
+fi
+
+echo "Deploying container application..."
 
 az deployment group create \
-    --resource-group $resource_group_name \
-    --template-file azuredeploy.json \
-    --parameters @azuredeploy.parameters.json
+    --resource-group $CA_RESOURCE_GROUP \
+    --template-file ./azuredeploy.json \
+    --parameters @./azuredeploy.parameters.json
 
 fqdn=$(az containerapp show \
-  --name $name \
-  --resource-group $resource_group_name \
-  --query configuration.ingress.fqdn -o tsv)
+  --name sb-todo-api \
+  --resource-group $CA_RESOURCE_GROUP \
+  --query configuration.ingress.fqdn \
+  --output tsv)
 
-echo "Application endpoint available at $fqdn"
+echo "Application endpoint available at ${fqdn}"

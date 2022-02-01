@@ -59,6 +59,10 @@ public class TodoController {
         if (id < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
+        if (!todoRepository.existsById(id)) {
+            logger.info("Todo {} not found", id);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
         logger.info("Deleting todo {}", id);
         todoRepository.deleteById(id);
     }

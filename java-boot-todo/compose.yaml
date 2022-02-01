@@ -6,8 +6,6 @@ services:
       context: .
       dockerfile: ${DOCKERFILE:-Dockerfile.buildkit}
     image: java-boot-todo:${TAG:-latest}
-    # Optional: Enable structured logging 
-    # command: ["--spring.profiles.active=json-logging"]
     ports:
       - "8080:8080"
       - "4004:4004"
@@ -15,3 +13,4 @@ services:
       - POSTGRESQL_HOST=${POSTGRESQL_HOST}
       - POSTGRESQL_USERNAME=${POSTGRESQL_USERNAME}
       - POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-json-logging}
