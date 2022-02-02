@@ -13,10 +13,35 @@ location=${3:-northeurope}
 resource_group_name=$base_name
 la_workspace_name=$base_name-logs
 containerapps_env_name=$base_name-env
+vnet_name=$base_name-vnet
 
 az group create \
   --name $resource_group_name \
   --location $location
+
+az network vnet create \
+  --resource-group $resource_group_name \
+  --name $vnet_name \
+  --location $location \
+  --address-prefix 10.150.0.0/16 \
+  --query id \
+  --output tsv
+
+cp_subnet_id=$(az network vnet subnet create \
+  --resource-group $resource_group_name \
+  --vnet-name $vnet_name \
+  --name control-plane \
+  --address-prefixes 10.150.0.0/21 \
+  --query id \
+  --output tsv)
+
+app_subnet_id=$(az network vnet subnet create \
+  --resource-group $resource_group_name \
+  --vnet-name $vnet_name \
+  --name applications \
+  --address-prefixes 10.150.8.0/21 \
+  --query id \
+  --output tsv)
 
 az monitor log-analytics workspace create \
   --resource-group $resource_group_name \
@@ -39,7 +64,9 @@ az containerapp env create \
   --resource-group $resource_group_name \
   --logs-workspace-id $la_workspace_client_id \
   --logs-workspace-key $la_workspace_client_secret \
-  --location $location
+  --location $location \
+  --app-subnet-resource-id $app_subnet_id \
+  --controlplane-subnet-resource-id $cp_subnet_id
 
 pg_admin=capgadmin
 pg_pwd=$(uuidgen)

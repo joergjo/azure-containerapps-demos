@@ -1,6 +1,6 @@
 # Azure Container App sample: Spring Boot, PostgreSQL, and Datadog
 
-This application is based on [this sample from Azure's Spring Boot docs](https://docs.microsoft.com/en-us/azure/developer/java/spring-framework/configure-spring-data-jpa-with-azure-postgresql) with all [CRUD scenarios implemented](https://github.com/joergjo/azure-containerapps-demos/blob/175fee5363e8b1199bcf28bb0e87f15c7d3f12cc/java-boot-todo-dd/src/main/java/com/example/containerapp/TodoController.java#L20) and the ability to [seed test data](https://github.com/joergjo/azure-containerapps-demos/blob/175fee5363e8b1199bcf28bb0e87f15c7d3f12cc/java-boot-todo-dd/src/main/java/com/example/containerapp/TodoApplication.java#L25) in an empty database for any Spring Profile other than `prod`.
+This application is based on [this sample from Azure's Spring Boot docs](https://docs.microsoft.com/en-us/azure/developer/java/spring-framework/configure-spring-data-jpa-with-azure-postgresql), structured JSON logging, and can [seed test data](https://github.com/joergjo/azure-containerapps-demos/blob/175fee5363e8b1199bcf28bb0e87f15c7d3f12cc/java-boot-todo-dd/src/main/java/com/example/containerapp/TodoApplication.java#L25) in an empty database for any Spring Profile other than `prod`.
 
 The most interesting addition is experimental support for [Datadog](https://www.datadoghq.com/) for distributed tracing. Note that this is _totally_ unsupported as of yet, unless your friendly Datadog support person tells you otherwise 😉. See [below](#datadog) for more details.
 
@@ -9,7 +9,10 @@ The most interesting addition is experimental support for [Datadog](https://www.
 - [Azure CLI 2.0](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) (**v2.30** or newer)
 - Azure Container App extension for Azure CLI
 
-  `az extension add --source https://workerappscliextension.blob.core.windows.net/azure-cli-extension/containerapp-0.2.0-py2.py3-none-any.whl`
+  ```
+  az extension add \
+    --source https://workerappscliextension.blob.core.windows.net/azure-cli-extension/containerapp-0.2.2-py2.py3-none-any.whl
+  ```
 
 The application can be build on and deyployed from either Linux, macOS, or Windows. Since I've included only bash scripts, [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/install) provides you the best experience if you are using Windows 10 or 11.
 
@@ -57,7 +60,7 @@ I have included the following Datadog configuration options for the application 
 | `ddEnvironment`        | `DD_ENV`        | optional, set to `staging` by default      |
 | `ddServiceName`        | `DD_SERVICE`    | optional, set to `sb-todo-api` by default  |
 | `ddVersion`            | `DD_VERSION`    | optional, set to `0.0.1` by default        |
-| `ddSite`               | `DD_SITE`       | optional, set to `datadoghq.eu` by default |
+| `ddSite`               | `DD_SITE`       | optional, set to `datadoghq.com` by default |
 | `ddAgentHost`          | `DD_AGENT_HOST` | set automatically depending on topology    |
 
 # [Deploy to an Azure Container App](#deploy-to-azure)
@@ -79,6 +82,7 @@ This script will provision all required Azure resources to run the sample applic
 - An [Azure Container Apps environment](https://docs.microsoft.com/en-us/azure/container-apps/environment)
 - A [Log Analytics workspace](https://docs.microsoft.com/en-us/azure/container-apps/monitor?tabs=bash). Container Apps environments require this. The application logs to stdout and hence its log will be written to the workspace, but this can be turned off.
 - An [Azure Database for PostgreSQL Flexible Server](https://docs.microsoft.com/en-us/azure/postgresql/flexible-server/overview). This is required by the application.
+- **[NEW]** [A Virtual Network for the Container Apps environment](https://docs.microsoft.com/en-us/azure/container-apps/vnet-custom?tabs=bash&pivots=azure-cli)
 
 Note that this script uses the Azure CLI to provision the required Azure resources, so as long as you don't delete these resources, you don't need to run `create_env.sh` again.
 

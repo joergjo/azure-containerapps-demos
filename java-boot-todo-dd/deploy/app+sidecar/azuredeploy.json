@@ -47,7 +47,7 @@
       "type": "String"
     },
     "ddSite": {
-      "defaultValue": "datadoghq.eu",
+      "defaultValue": "datadoghq.com",
       "type": "String"
     }
   },
