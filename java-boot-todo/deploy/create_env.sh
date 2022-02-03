@@ -6,6 +6,7 @@ resource_group_name=$base_name
 la_workspace_name=$base_name-logs
 containerapps_env_name=$base_name-env
 vnet_name=$base_name-vnet
+dns_zone_name=cademos.postgres.database.azure.com
 
 az group create \
   --name $resource_group_name \
@@ -34,6 +35,25 @@ app_subnet_id=$(az network vnet subnet create \
   --address-prefixes 10.150.8.0/21 \
   --query id \
   --output tsv)
+
+db_subnet_id=$(az network vnet subnet create \
+  --resource-group $resource_group_name \
+  --vnet-name $vnet_name \
+  --name postgres \
+  --address-prefixes 10.150.16.0/24 \
+  --query id \
+  --output tsv)
+
+az network private-dns zone create \
+  --resource-group $resource_group_name \
+  --name $dns_zone_name
+
+az network private-dns link vnet create \
+  --resource-group $resource_group_name \
+  --name $vnet_name-link \
+  --zone-name $dns_zone_name \
+  --virtual-network $vnet_name \
+  --registration-enabled true
 
 az monitor log-analytics workspace create \
   --resource-group $resource_group_name \
@@ -68,10 +88,11 @@ pg_host=$(az postgres flexible-server create \
   --admin-user $pg_admin \
   --admin-password $pg_pwd \
   --version 13 \
-  --public-access 0.0.0.0 \
+  --subnet $db_subnet_id \
   --tier Burstable \
   --sku-name Standard_B1ms \
   --location $location \
+  --private-dns-zone $dns_zone_name \
   --query host \
   --output tsv)
 

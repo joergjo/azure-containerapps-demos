@@ -82,7 +82,7 @@ This script will provision all required Azure resources to run the sample applic
 - An [Azure Container Apps environment](https://docs.microsoft.com/en-us/azure/container-apps/environment)
 - A [Log Analytics workspace](https://docs.microsoft.com/en-us/azure/container-apps/monitor?tabs=bash). Container Apps environments require this. The application logs to stdout and hence its log will be written to the workspace, but this can be turned off.
 - An [Azure Database for PostgreSQL Flexible Server](https://docs.microsoft.com/en-us/azure/postgresql/flexible-server/overview). This is required by the application.
-- **[NEW]** [A Virtual Network for the Container Apps environment](https://docs.microsoft.com/en-us/azure/container-apps/vnet-custom?tabs=bash&pivots=azure-cli)
+- **[NEW]** [A Virtual Network for the Container Apps environment](https://docs.microsoft.com/en-us/azure/container-apps/vnet-custom?tabs=bash&pivots=azure-cli). Flexible Server is injected into this virtual network, so you cannot access it directly from outside. 
 
 Note that this script uses the Azure CLI to provision the required Azure resources, so as long as you don't delete these resources, you don't need to run `create_env.sh` again.
 
