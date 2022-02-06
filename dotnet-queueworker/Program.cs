@@ -1,32 +1,20 @@
-using System.Threading.Tasks;
 using Azure.Storage.Queues;
 using Lamar.Microsoft.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Oakton;
+using QueueWorker;
 
-namespace QueueWorker
-{
-    public class Program
+var host = Host.CreateDefaultBuilder(args)
+    .UseLamar()
+    .ConfigureServices((hostContext, services) =>
     {
-        public static Task<int> Main(string[] args)
+        services.AddHostedService<Worker>();
+        services.AddApplicationInsightsTelemetryWorkerService();
+        services.AddSingleton(_ =>
         {
-            return CreateHostBuilder(args).RunOaktonCommands(args);
-        }
+            var connectionString = hostContext.Configuration.GetValue<string>("WorkerOptions:StorageConnectionString");
+            var queueName = hostContext.Configuration.GetValue<string>("WorkerOptions:QueueName");
+            return new QueueClient(connectionString, queueName);
+        });
+    })
+    .Build();
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-             Host.CreateDefaultBuilder(args)
-                 .UseLamar()
-                 .ConfigureServices((hostContext, services) =>
-                 {
-                     services.AddHostedService<Worker>();
-                     services.AddApplicationInsightsTelemetryWorkerService();
-                     services.AddSingleton<QueueClient>(services =>
-                     {
-                         string connectionString = hostContext.Configuration["WorkerOptions:StorageConnectionString"];
-                         string queueName = hostContext.Configuration["WorkerOptions:QueueName"];
-                         return new QueueClient(connectionString, queueName);
-                     });
-                 });
-    }
-}
+await host.RunAsync();

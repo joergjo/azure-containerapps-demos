@@ -1,17 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-    <UserSecretsId>dotnet-QueueWorker-5B6165E2-26B8-47CF-BB55-92EB713A3149</UserSecretsId>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-QueueWorker-F6B152E2-1BA8-447F-AFE6-08A2633CE01E</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Azure.Storage.Queues" Version="12.8.0" />
-    <PackageReference Include="Lamar.Diagnostics" Version="6.0.0" />
-    <PackageReference Include="Lamar.Microsoft.DependencyInjection" Version="6.0.0" />
-    <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" Version="2.18.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="5.0.0" />
-    <PackageReference Include="Oakton" Version="3.2.2" />
+    <PackageReference Include="Lamar.Diagnostics" Version="7.1.1" />
+    <PackageReference Include="Lamar.Microsoft.DependencyInjection" Version="7.1.1" />
+    <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" Version="2.20.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="6.0.0" />
+    <PackageReference Include="Oakton" Version="4.1.0" />
   </ItemGroup>
 </Project>
