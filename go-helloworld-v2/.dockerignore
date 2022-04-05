@@ -1,4 +1,0 @@
-Dockerfile
-.dockerignore
-go-helloworld
-*.exe

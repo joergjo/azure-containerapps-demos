@@ -1,4 +1,4 @@
-FROM golang:1.17 AS builder
+FROM golang:1.18 AS builder
 
 WORKDIR /build
 
@@ -21,7 +21,7 @@ COPY . .
 RUN CGO_ENABLED=0 go build -ldflags '-s -w' -tags 'osusergo netgo' -o helloworld ./main.go
 
 FROM scratch AS final
-EXPOSE 5000
+EXPOSE 8000
 
 # Copy over the binary artifact
 COPY --from=builder /build/helloworld /
