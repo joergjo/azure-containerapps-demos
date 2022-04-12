@@ -10,7 +10,7 @@ param environmentId string
 @description('Specifies the container image.')
 param image string
 
-@description('Specifies the eb environment variables used by the application.')
+@description('Specifies the environment variables used by the application.')
 param envVars array
 
 resource containerApp 'Microsoft.App/containerApps@2022-01-01-preview' = {

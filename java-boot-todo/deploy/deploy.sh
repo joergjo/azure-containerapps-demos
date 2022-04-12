@@ -1,49 +1,31 @@
 #!/bin/bash
-
-if [[ -z "${CA_RESOURCE_GROUP}" ]]; then
-  echo "Please set the CA_RESOURCE_GROUP environment variable to the name of the resource group where the container application will be deployed"
-  exit 1
+if [ -z "$CONTAINERAPP_RESOURCE_GROUP_NAME" ]; then
+    echo "CONTOSOADS_RESOURCE_GROUP_NAME is not set. Please set it to the name of the resource group to deploy to."
+    exit 1
 fi
 
-if [[ ! -f "azuredeploy.parameters.json" ]]; then
-echo "Please create a file named 'azuredeploy.parameters.json' in the same directory as 'azuredeploy.json' and set the parameter values."
-echo
-echo "azuredeploy.parameters.json:"
-cat << EOF
-{
-  "\$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
-  "contentVersion": "1.0.0.0",
-  "parameters": {
-    "environmentName": {
-      "value": "<name of your Container Apps environment>"
-    },
-    "postgresHost": {
-      "value": "<FQDN of your PostgreSQL server>"
-    },
-    "postgresUser": {
-      "value": "<PostgreSQL user name>"
-    },
-    "postgresPassword": {
-      "value": "<PostgreSQL password>"
-    }
-  }
-}
-EOF
-
-exit 1
+if [ -z "$CONTAINERAPP_POSTGRES_LOGIN_PWD" ]; then
+    echo "CONTAINERAPP_POSTGRES_LOGIN_PWD is not set. Please set it to a secure password for the Containe App's database server."
+    exit 1
 fi
 
-echo "Deploying container application..."
+resource_group_name=$CONTAINERAPP_RESOURCE_GROUP_NAME
+postgres_login_pwd=$CONTAINERAPP_POSTGRES_LOGIN_PWD
+postgres_login=${CONTAINERAPP_POSTGRES_LOGIN:-"demoadmin"}
+app_name=${CONTAINERAPP_BASE_NAME:-todoapi}
+location=${CONTAINERAPP_LOCATION:-westeurope}
+deployment_name="$app_name-$(date +%s)"
 
-az deployment group create \
-    --resource-group $CA_RESOURCE_GROUP \
-    --template-file ./azuredeploy.json \
-    --parameters @./azuredeploy.parameters.json
+az group create \
+  --resource-group "$resource_group_name" \
+  --location "$location"
 
-fqdn=$(az containerapp show \
-  --name sb-todo-api \
-  --resource-group $CA_RESOURCE_GROUP \
-  --query configuration.ingress.fqdn \
+fqdn=$(az deployment group create \
+  --resource-group "$resource_group_name" \
+  --name "$deployment_name" \
+  --template-file main.bicep \
+  --parameters name="$app_name" location="$location" postgresLogin="$postgres_login" postgresLoginPassword="$postgres_login_pwd"  \
+  --query properties.outputs.fqdn.value \
   --output tsv)
 
-echo "Application endpoint available at ${fqdn}"
+echo "Application has been deployed successfully. You can access it at https://$fqdn"

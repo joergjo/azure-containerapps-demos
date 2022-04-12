@@ -7,8 +7,6 @@ fi
 resource_group_name=$CONTAINERAPP_RESOURCE_GROUP_NAME
 app_name=${CONTAINERAPP_BASE_NAME:-containerapp}
 location=${CONTAINERAPP_LOCATION:-westeurope}
-tag=${CONTAINERAPP_WEBAPP_TAG:-latest}
-show_version=${CONTAINERAPP_SHOW_VERSION:-true}
 deployment_name="$app_name-$(date +%s)"
 
 az group create \
@@ -19,6 +17,7 @@ fqdn=$(az deployment group create \
   --resource-group "$resource_group_name" \
   --name "$deployment_name" \
   --template-file main.bicep \
+  --parameters name="$app_name" location="$location" \
   --query properties.outputs.fqdn.value \
   --output tsv)
 
