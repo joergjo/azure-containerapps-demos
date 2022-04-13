@@ -14,7 +14,7 @@ public class Worker : BackgroundService
     {
         _queueClient = queueClient;
         _logger = logger;
-        _decodeBase64 = configuration.GetValue<bool>("WorkerOptions:DecodeBase64");
+        _decodeBase64 = configuration.GetValue<bool>("WorkerOptions:DecodeBase64", true);
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)

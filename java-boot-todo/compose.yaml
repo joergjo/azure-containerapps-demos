@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: ${DOCKERFILE:-Dockerfile.buildkit}
-    image: java-boot-todo:${TAG:-latest}
+    image: ${IMAGE:-joergjo/java-boot-todo}
     ports:
       - "8080:8080"
       - "4004:4004"

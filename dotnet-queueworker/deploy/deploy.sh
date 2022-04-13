@@ -1,43 +1,27 @@
 #!/bin/bash
-
-if [[ -z "${CA_RESOURCE_GROUP}" ]]; then
-  echo "Please set the CA_RESOURCE_GROUP environment variable to the name of the resource group where the container application will be deployed"
-  exit 1
+if [ -z "$CONTAINERAPP_RESOURCE_GROUP_NAME" ]; then
+    echo "CONTOSOADS_RESOURCE_GROUP_NAME is not set. Please set it to the name of the resource group to deploy to."
+    exit 1
 fi
 
-if [[ ! -f "azuredeploy.parameters.json" ]]; then
-  echo "Please create a file named 'azuredeploy.parameters.json' in the same directory as 'azuredeploy.json' and set the parameter values."
-  echo
-  echo "azuredeploy.parameters.json:"
-  cat <<EOF
-{
-  "\$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
-  "contentVersion": "1.0.0.0",
-  "parameters": {
-    "environmentName": {
-      "value": "<name of your Container Apps environment>"
-    },
-    "storageConnectionString": {
-      "value": "<Storage account connection string>"
-    },
-    "appInsightsConnectionString": {
-      "value": "<Application Insights connection string>"
-    },
-    "queueName": {
-      "value": "<name of your Azure storage queue>"
-    }
-  }
-}
-EOF
+resource_group_name=$CONTAINERAPP_RESOURCE_GROUP_NAME
+location=${CONTAINERAPP_LOCATION:-westeurope}
+app_name=${CONTAINERAPP_BASE_NAME:-queueworker}
+queue_name=${CONTAINERAPP_QUEUE_NAME:-demo}
+decode_base64=${CONTAINERAPP_DECODE_BASE64:-true}
+deployment_name="$app_name-$(date +%s)"
 
-  exit 1
-fi
+current_ip=$(curl -s "https://api.ipify.org?format=text")
 
-echo "Deploying container application..."
+az group create \
+  --resource-group "$resource_group_name" \
+  --location "$location"
 
 az deployment group create \
-  --resource-group $CA_RESOURCE_GROUP \
-  --template-file ./azuredeploy.json \
-  --parameters @./azuredeploy.parameters.json
+  --resource-group "$resource_group_name" \
+  --name "$deployment_name" \
+  --template-file main.bicep \
+  --parameters appName="$app_name" location="$location" queueName="$queue_name" \
+    decodeBase64="$decode_base64" clientPublicIpAddress="$current_ip"
 
-echo "Application is running!"
+echo "Application has been deployed successfully. Please enqueue a message to the queue and check the output."

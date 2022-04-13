@@ -13,6 +13,8 @@ param image string
 @description('Specifies the environment variables used by the application.')
 param envVars array
 
+var port = 8000
+
 resource containerApp 'Microsoft.App/containerApps@2022-01-01-preview' = {
   name: name
   location: location
@@ -21,7 +23,7 @@ resource containerApp 'Microsoft.App/containerApps@2022-01-01-preview' = {
     configuration: {
       ingress: {
         external: true
-        targetPort: 8000
+        targetPort: port
       }
       dapr: {
         enabled: false
@@ -37,6 +39,22 @@ resource containerApp 'Microsoft.App/containerApps@2022-01-01-preview' = {
             cpu: json('0.5')
             memory: '1Gi'
           }
+          probes: [
+            {
+              type: 'liveness'
+              httpGet: {
+                path: '/'
+                port: port
+              }
+            }
+            {
+              type: 'readiness'
+              httpGet: {
+                path: '/'
+                port: port
+              }
+            }
+          ]
         }
       ]
       scale: {

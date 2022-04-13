@@ -24,7 +24,7 @@ fqdn=$(az deployment group create \
   --resource-group "$resource_group_name" \
   --name "$deployment_name" \
   --template-file main.bicep \
-  --parameters name="$app_name" location="$location" postgresLogin="$postgres_login" postgresLoginPassword="$postgres_login_pwd"  \
+  --parameters appName="$app_name" location="$location" postgresLogin="$postgres_login" postgresLoginPassword="$postgres_login_pwd"  \
   --query properties.outputs.fqdn.value \
   --output tsv)
 

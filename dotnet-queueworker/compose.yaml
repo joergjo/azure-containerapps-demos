@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  queue-worker:
+    build:
+      context: .
+      dockerfile: ${DOCKERFILE:-Dockerfile}
+    image: ${IMAGE:-joergjo/dotnet-queueworker}
+    environment:
+      - WorkerOptions__StorageConnectionString=${WorkerOptions__StorageConnectionString}
+      - WorkerOptions__QueueName=${WorkerOptions__QueueName:-dotnet-queueworker}
+      - WorkerOptions__DecodeBase64=${WorkerOptions__DecodeBase64:-true}
+      - ApplicationInsights__ConnectionString=${ApplicationInsights__ConnectionString}
+      - Logging__Console__DisableColors=true

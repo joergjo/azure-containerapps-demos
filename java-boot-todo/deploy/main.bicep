@@ -4,7 +4,7 @@ param location string = resourceGroup().location
 @description('Specifies the Container App\'s name.')
 @minLength(5)
 @maxLength(12)
-param name string = 'containerapp'
+param appName string
 
 @description('Specifies the Container App\'s image.')
 param image string = 'joergjo/java-boot-todo:latest'
@@ -21,8 +21,8 @@ module network 'modules/network.bicep' = {
   name: 'network'
   params: {
     location: location
-    vnetName: '${name}-vnet'
-    privateDnsZoneName: '${name}.postgres.database.azure.com'
+    vnetName: '${appName}-vnet'
+    privateDnsZoneName: '${appName}.postgres.database.azure.com'
   }
 }
 
@@ -30,7 +30,7 @@ module environment 'modules/environment.bicep' = {
   name: 'environment'
   params: {
     location: location
-    namePrefix: name
+    namePrefix: appName
     infrastructureSubnetId: network.outputs.infraSubnetId
     runtimeSubnetId: network.outputs.runtimeSubnetId
   }
@@ -62,7 +62,7 @@ var secrets = {
 module app 'modules/app.bicep' = {
   name: 'app'
   params: {
-    name: name
+    name: appName
     location: location
     environmentId: environment.outputs.environmentId
     image: image
