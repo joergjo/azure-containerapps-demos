@@ -1,4 +1,4 @@
-module github.com/joergjo/containerapps-demos/go-helloworld
+module github.com/joergjo/azure-containerapps-demos/go-helloworld
 
 go 1.18
 
