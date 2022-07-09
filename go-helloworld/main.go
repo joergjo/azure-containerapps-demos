@@ -22,7 +22,6 @@ var worldTranslations = []string{
 
 const (
 	enableAboutEnvVar = "HELLOWORLD_ENABLE_ABOUT"
-	hostField         = "host"
 )
 
 type hostNameFieldHook struct {

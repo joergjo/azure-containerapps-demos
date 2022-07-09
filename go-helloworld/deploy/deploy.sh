@@ -1,6 +1,6 @@
 #!/bin/bash
 if [ -z "$CONTAINERAPP_RESOURCE_GROUP_NAME" ]; then
-    echo "CONTOSOADS_RESOURCE_GROUP_NAME is not set. Please set it to the name of the resource group to deploy to."
+    echo "CONTAINERAPP_RESOURCE_GROUP_NAME is not set. Please set it to the name of the resource group to deploy to."
     exit 1
 fi
 
