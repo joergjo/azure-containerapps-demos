@@ -28,7 +28,7 @@ param postgresSubnetId string
 @description('Specifies the resource ID of the private DNS zone name.')
 param privateDnsZoneId string
 
-resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2021-06-01' = {
+resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2022-01-20-preview' = {
   name: serverName
   location: location
   sku: {

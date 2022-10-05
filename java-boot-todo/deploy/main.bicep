@@ -32,7 +32,6 @@ module environment 'modules/environment.bicep' = {
     location: location
     namePrefix: appName
     infrastructureSubnetId: network.outputs.infraSubnetId
-    runtimeSubnetId: network.outputs.runtimeSubnetId
   }
 }
 

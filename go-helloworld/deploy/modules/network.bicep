@@ -20,16 +20,9 @@ resource vnet 'Microsoft.Network/virtualNetworks@2021-05-01' = {
           addressPrefix: '10.150.0.0/21'
         }
       }
-      {
-        name: 'runtime'
-        properties: {
-          addressPrefix: '10.150.8.0/21'
-        }
-      }
     ]
   }
 }
 
 output vnetId string = vnet.id
 output infraSubnetId string = vnet.properties.subnets[0].id
-output runtimeSubnetId string = vnet.properties.subnets[1].id

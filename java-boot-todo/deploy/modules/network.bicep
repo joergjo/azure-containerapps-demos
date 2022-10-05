@@ -7,7 +7,7 @@ param privateDnsZoneName string
 @description('Specifies the location to deploy to.')
 param location string
 
-resource vnet 'Microsoft.Network/virtualNetworks@2021-05-01' = {
+resource vnet 'Microsoft.Network/virtualNetworks@2022-01-01' = {
   name: vnetName
   location: location
   properties: {
@@ -21,12 +21,6 @@ resource vnet 'Microsoft.Network/virtualNetworks@2021-05-01' = {
         name: 'infrastructure'
         properties: {
           addressPrefix: '10.150.0.0/21'
-        }
-      }
-      {
-        name: 'runtime'
-        properties: {
-          addressPrefix: '10.150.8.0/21'
         }
       }
       {
@@ -67,7 +61,6 @@ resource privateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLin
 
 output vnetId string = vnet.id
 output infraSubnetId string = vnet.properties.subnets[0].id
-output runtimeSubnetId string = vnet.properties.subnets[1].id
-output databaseSubnetId string = vnet.properties.subnets[2].id
+output databaseSubnetId string = vnet.properties.subnets[1].id
 output privateDnsZoneId string = privateDnsZone.id
 

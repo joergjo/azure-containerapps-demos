@@ -18,7 +18,7 @@ services:
       - POSTGRESQL_PASSWORD=pass@word1
       - SPRING_PROFILES_ACTIVE=dev
     depends_on:
-      - postgresql-db
+      - todo-db
 
   todo-db:
     image: postgres:${POSTGRES_TAG:-13-alpine}
