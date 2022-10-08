@@ -11,6 +11,7 @@ param location string
 @allowed([
   '12'
   '13'
+  '14'
 ])
 param version string = '13'
 

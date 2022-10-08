@@ -7,7 +7,7 @@ param location string = resourceGroup().location
 param appName string
 
 @description('Specifies the Container App\'s image.')
-param image string = 'joergjo/java-boot-todo:latest'
+param image string
 
 @description('Specifies the PostgreSQL login name.')
 @secure()

@@ -4,16 +4,23 @@ if [ -z "$CONTAINERAPP_RESOURCE_GROUP_NAME" ]; then
     exit 1
 fi
 
+if [ -z "$CONTAINERAPP_POSTGRES_LOGIN" ]; then
+    echo "CONTAINERAPP_POSTGRES_LOGIN is not set. Please set it to a valid login name for the Container App's database server."
+    exit 1
+fi
+
 if [ -z "$CONTAINERAPP_POSTGRES_LOGIN_PWD" ]; then
-    echo "CONTAINERAPP_POSTGRES_LOGIN_PWD is not set. Please set it to a secure password for the Containe App's database server."
+    echo "CONTAINERAPP_POSTGRES_LOGIN_PWD is not set. Please set it to a secure password for the Container App's database server."
     exit 1
 fi
 
 resource_group_name=$CONTAINERAPP_RESOURCE_GROUP_NAME
 postgres_login_pwd=$CONTAINERAPP_POSTGRES_LOGIN_PWD
-postgres_login=${CONTAINERAPP_POSTGRES_LOGIN:-"demoadmin"}
-app_name=${CONTAINERAPP_BASE_NAME:-todoapi}
-location=${CONTAINERAPP_LOCATION:-westeurope}
+postgres_login=$CONTAINERAPP_POSTGRES_LOGIN
+
+app_name=${CONTAINERAPP_BASE_NAME:-"todoapi"}
+location=${CONTAINERAPP_LOCATION:-"westeurope"}
+image=${CONTAINERAPP_IMAGE:-"joergjo/java-boot-todo:latest"}
 deployment_name="$app_name-$(date +%s)"
 
 az group create \
@@ -24,7 +31,8 @@ fqdn=$(az deployment group create \
   --resource-group "$resource_group_name" \
   --name "$deployment_name" \
   --template-file main.bicep \
-  --parameters appName="$app_name" location="$location" postgresLogin="$postgres_login" postgresLoginPassword="$postgres_login_pwd"  \
+  --parameters appName="$app_name" image="$image" \
+    postgresLogin="$postgres_login" postgresLoginPassword="$postgres_login_pwd"  \
   --query properties.outputs.fqdn.value \
   --output tsv)
 
