@@ -49,7 +49,7 @@ resource containerApp 'Microsoft.App/containerApps@2022-03-01' = {
           name: name
           env: [
             {
-              name: 'POSTGRESQL_HOST'
+              name: 'POSTGRESQL_FQDN'
               secretRef: 'postgres-host'
             }
             {

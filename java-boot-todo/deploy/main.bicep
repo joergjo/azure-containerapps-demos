@@ -6,8 +6,8 @@ param location string = resourceGroup().location
 @maxLength(12)
 param appName string
 
-@description('Specifies the Container App\'s image.')
-param image string
+// @description('Specifies the Container App\'s image.')
+// param image string
 
 @description('Specifies the PostgreSQL login name.')
 @secure()
@@ -17,6 +17,17 @@ param postgresLogin string
 @secure()
 param postgresLoginPassword string
 
+@description('Specifies the AAD database administrator\'s UPN')
+param aadAdminUPN string
+
+@description('Specifies the AAD database administrator\'s object ID')
+param aadAdminOID string
+
+@description('Specifies the client IP address to whitelist')
+param clientIP string
+
+@description('Database to be created')
+param databaseName string
 module network 'modules/network.bicep' = {
   name: 'network'
   params: {
@@ -35,38 +46,42 @@ module environment 'modules/environment.bicep' = {
   }
 }
 
-var postgresHostName = 'server${uniqueString(resourceGroup().id)}'
+var serverName = 'server${uniqueString(resourceGroup().id)}'
 
-module postgres 'modules/database.bicep' = {
+module postgres 'modules/database-singlesrv.bicep' = {
   name: 'postgres'
   params: {
     location: location
-    serverName: postgresHostName
-    databaseName: 'demo'
-    postgresSubnetId: network.outputs.databaseSubnetId
-    privateDnsZoneId: network.outputs.privateDnsZoneId
-    administratorLogin: postgresLogin
-    administratorLoginPassword: postgresLoginPassword
+    serverName: serverName
+    databaseName: databaseName
+    postgresLogin: postgresLogin
+    postgresLoginPassword:postgresLoginPassword
+    aadAdminOID: aadAdminOID
+    aadAdminUPN: aadAdminUPN
+    clientIP: clientIP
   }
 }
 
-var secrets = {
-  postgres: {
-    host: '${postgresHostName}.postgres.database.azure.com'
-    user: postgresLogin
-    password: postgresLoginPassword
-  }
-}
+// var secrets = {
+//   postgres: {
+//     host: '${postgresHostName}.postgres.database.azure.com'
+//     user: postgresLogin
+//     password: postgresLoginPassword
+//   }
+// }
 
-module app 'modules/app.bicep' = {
-  name: 'app'
-  params: {
-    name: appName
-    location: location
-    environmentId: environment.outputs.environmentId
-    image: image
-    secrets: secrets
-  }
-}
+// module app 'modules/app.bicep' = {
+//   name: 'app'
+//   params: {
+//     name: appName
+//     location: location
+//     environmentId: environment.outputs.environmentId
+//     image: image
+//     secrets: secrets
+//   }
+// }
 
-output fqdn string = app.outputs.fqdn
+output dbServerFQDN string = postgres.outputs.serverFQDN
+output dbServerName string = serverName
+output environmentId string = environment.outputs.environmentId
+output identityName string = environment.outputs.identityName

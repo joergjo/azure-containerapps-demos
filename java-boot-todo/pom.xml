@@ -14,7 +14,7 @@
 	<description>Azure Container Apps demo project for Spring Boot</description>
 
 	<properties>
-		<java.version>11</java.version>
+		<java.version>17</java.version>
 		<logback-contrib.version>0.1.5</logback-contrib.version>
 	</properties>
 
@@ -42,7 +42,11 @@
 			<artifactId>logback-jackson</artifactId>
 			<version>${logback-contrib.version}</version>
 		</dependency>
-
+		<dependency>
+			<groupId>com.azure.spring</groupId>
+			<artifactId>spring-cloud-azure-starter-jdbc-postgresql</artifactId>
+			<version>4.5.0-beta.1</version>
+		</dependency>
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>

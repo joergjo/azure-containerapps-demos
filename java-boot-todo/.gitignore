@@ -37,3 +37,6 @@ azuredeploy.parameters.json
 
 ### SDKMAN ###
 .sdkmanrc
+
+### Generated SQL files ###
+*.generated.sql

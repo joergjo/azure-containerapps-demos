@@ -1,0 +1,5 @@
+{"properties": [{
+  "name": "spring.datasource.azure.passwordless-enabled",
+  "type": "java.lang.Boolean",
+  "description": "Enables passwordless authentication on Azure using Managed Identities",
+}]}
