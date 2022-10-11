@@ -13,15 +13,15 @@ services:
       - "8080:8080"
       - "4004:4004"
     environment:
-      - POSTGRESQL_HOST=todo-db
+      - POSTGRESQL_FQDN=todo-db
       - POSTGRESQL_USERNAME=postgres
       - POSTGRESQL_PASSWORD=pass@word1
-      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_PROFILES_ACTIVE=local
     depends_on:
       - todo-db
 
   todo-db:
-    image: postgres:${POSTGRES_TAG:-13-alpine}
+    image: postgres:${POSTGRES_TAG:-14-alpine}
     ports:
       - "5432:5432"
     volumes:

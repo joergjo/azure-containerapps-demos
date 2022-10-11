@@ -9,6 +9,7 @@ param infrastructureSubnetId string
 
 var workspaceName = '${namePrefix}-logs'
 var environmentName = '${namePrefix}-env'
+var identityName = '${namePrefix}-mi'
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
   name: workspaceName
@@ -37,4 +38,10 @@ resource environment 'Microsoft.App/managedEnvironments@2022-03-01' = {
   }
 }
 
+resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-31-preview' = {
+  location: location
+  name: identityName
+}
+
 output environmentId string = environment.id
+output identityName string = identityName
