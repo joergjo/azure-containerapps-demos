@@ -2,7 +2,7 @@
 param name string
 
 @description('Specifies the location to deploy to.')
-param location string 
+param location string
 
 @description('Specifies the name of Azure Container Apps environment to deploy to.')
 param environmentId string
@@ -10,13 +10,29 @@ param environmentId string
 @description('Specifies the container image.')
 param image string
 
+@description('Specifies the container app\'s user assigned managed identity\'s UPN.')
+param identityUPN string
+
+@description('Specifies the database name to use.')
+param database string
+
 @description('Specifies the secrets used by the application.')
 @secure()
 param secrets object
 
+resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-31-preview' existing = {
+  name: identityUPN
+}
+
 resource containerApp 'Microsoft.App/containerApps@2022-03-01' = {
   name: name
   location: location
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${appIdentity.id}': {}
+    }
+  }
   properties: {
     managedEnvironmentId: environmentId
     configuration: {
@@ -36,10 +52,6 @@ resource containerApp 'Microsoft.App/containerApps@2022-03-01' = {
           name: 'postgres-user'
           value: secrets.postgres.user
         }
-        {
-          name: 'postgres-pwd'
-          value: secrets.postgres.password
-        }
       ]
     }
     template: {
@@ -57,12 +69,16 @@ resource containerApp 'Microsoft.App/containerApps@2022-03-01' = {
               secretRef: 'postgres-user'
             }
             {
-              name: 'POSTGRESQL_PASSWORD'
-              secretRef: 'postgres-pwd'
+              name: 'POSTGRES_DB'
+              value: database
             }
             {
               name: 'SPRING_PROFILES_ACTIVE'
               value: 'json-logging'
+            }
+            {
+              name: 'AZURE_CLIENT_ID'
+              value: appIdentity.properties.clientId
             }
           ]
           resources: {
@@ -100,13 +116,13 @@ resource containerApp 'Microsoft.App/containerApps@2022-03-01' = {
       scale: {
         minReplicas: 1
         maxReplicas: 10
-          rules: [
-            {
-              name: 'httpscale'
-              http: {
-                metadata: {
-                  concurrentRequests: '100'
-                }
+        rules: [
+          {
+            name: 'httpscale'
+            http: {
+              metadata: {
+                concurrentRequests: '100'
+              }
             }
           }
         ]

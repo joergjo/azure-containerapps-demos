@@ -7,6 +7,9 @@ param privateDnsZoneName string
 @description('Specifies the location to deploy to.')
 param location string
 
+@description('Specifies whether a private DNS zone will be deployed')
+param deployDnsZone bool = true
+
 resource vnet 'Microsoft.Network/virtualNetworks@2022-01-01' = {
   name: vnetName
   location: location
@@ -41,12 +44,12 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-01-01' = {
   }
 }
 
-resource privateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+resource privateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = if (deployDnsZone) {
   name: privateDnsZoneName
   location: 'global'
 }
 
-resource privateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+resource privateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = if (deployDnsZone) {
   parent: privateDnsZone
   name: '${vnet.name}-link'
   location: 'global'
@@ -58,9 +61,8 @@ resource privateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLin
   }
 }
 
-
 output vnetId string = vnet.id
 output infraSubnetId string = vnet.properties.subnets[0].id
 output databaseSubnetId string = vnet.properties.subnets[1].id
-output privateDnsZoneId string = privateDnsZone.id
+output privateDnsZoneId string = deployDnsZone ? privateDnsZone.id : ''
 
