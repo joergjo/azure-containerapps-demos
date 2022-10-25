@@ -1,4 +1,6 @@
 @description('Specifies the name prefix of all resources.')
+@minLength(5)
+@maxLength(12)
 param namePrefix string
 
 @description('Specifies the location to deploy to.')
@@ -7,12 +9,8 @@ param location string
 @description('Specifies the subnet resource ID for the Container App environment.')
 param infrastructureSubnetId string
 
-var workspaceName = '${namePrefix}-logs'
-var environmentName = '${namePrefix}-env'
-var identityName = '${namePrefix}-mi'
-
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
-  name: workspaceName
+  name: '${namePrefix}-logs'
   location: location
   properties: {
     sku: {
@@ -22,7 +20,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-06
 }
 
 resource environment 'Microsoft.App/managedEnvironments@2022-03-01' = {
-  name: environmentName
+  name: '${namePrefix}-env'
   location: location
   properties: {
     appLogsConfiguration: {
@@ -40,8 +38,8 @@ resource environment 'Microsoft.App/managedEnvironments@2022-03-01' = {
 
 resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-31-preview' = {
   location: location
-  name: identityName
+  name: '${namePrefix}-mi'
 }
 
 output environmentId string = environment.id
-output identityName string = identityName
+output identityUPN string = appIdentity.name
