@@ -1,0 +1,6 @@
+# EditorConfig is awesome: http://EditorConfig.org
+root = false
+
+[*.go]
+indent_style = tab
+indent_size = 8
