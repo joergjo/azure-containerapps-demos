@@ -3,7 +3,7 @@ param location string = resourceGroup().location
 
 @description('Specifies the name prefix of all resources.')
 @minLength(5)
-@maxLength(12)
+@maxLength(20)
 param namePrefix string
 
 @description('Specifies the database name to use.')

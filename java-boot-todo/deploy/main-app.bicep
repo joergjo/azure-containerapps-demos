@@ -3,7 +3,7 @@ param location string = resourceGroup().location
 
 @description('Specifies the Container App\'s name.')
 @minLength(5)
-@maxLength(12)
+@maxLength(20)
 param appName string
 
 @description('Specifies the Container App\'s image.')

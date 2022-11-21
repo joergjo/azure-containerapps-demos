@@ -17,7 +17,7 @@ fi
 resource_group=$CONTAINERAPP_RESOURCE_GROUP
 app=${CONTAINERAPP_NAME:-"todoapi"}
 location=${CONTAINERAPP_LOCATION:-"westeurope"}
-image=${CONTAINERAPP_IMAGE:-"joergjo/java-boot-todo:latest"}
+image=${CONTAINERAPP_IMAGE:-"joergjo/java-boot-todo:stable"}
 postgres_login=$CONTAINERAPP_POSTGRES_LOGIN
 postgres_login_pwd=$CONTAINERAPP_POSTGRES_LOGIN_PWD
 database=${CONTAINERAPP_POSTGRES_DB-"demo"}
