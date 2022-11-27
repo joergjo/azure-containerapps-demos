@@ -2,69 +2,94 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	"golang.org/x/exp/slog"
 )
 
-func shutdown(ctx context.Context, s *http.Server, done chan struct{}) {
-	sigch := make(chan os.Signal, 1)
-	signal.Notify(sigch, syscall.SIGINT, syscall.SIGTERM)
-	sig := <-sigch
-	log.Printf("Got signal: %v. Server shutting down.", sig)
-
-	childCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
-
-	if err := s.Shutdown(childCtx); err != nil {
-		log.Printf("Error during shutdown: %v", err)
+func main() {
+	debug := false
+	debugEnv := strings.ToLower(os.Getenv("TODO_DEBUG"))
+	if debugEnv == "yes" || debugEnv == "true" || debugEnv == "on" || debugEnv == "1" {
+		debug = true
 	}
-	done <- struct{}{}
+
+	connString := os.Getenv("TODO_CONN_STRING")
+	listenAddr := os.Getenv("TODO_LISTEN_ADDR")
+
+	run(listenAddr, connString, debug)
 }
 
-func main() {
-	connString := os.Getenv("TODO_CONN_STRING")
-	if connString == "" {
-		log.Println("No connection string specified, using pqlib style PG* environment variables instead")
+func newLogger(w io.Writer, debug bool) *slog.JSONHandler {
+	opts := slog.HandlerOptions{
+		ReplaceAttr: func(a slog.Attr) slog.Attr {
+			if a.Key == slog.TimeKey {
+				return slog.Time(a.Key, a.Value.Time().UTC())
+			}
+			return a
+		},
 	}
-	listenAddr := os.Getenv("TODO_LISTEN_ADDR")
+	if debug {
+		opts.Level = slog.DebugLevel
+	}
+	return opts.NewJSONHandler(w)
+}
+
+func run(listenAddr string, connString string, debug bool) {
+	slog.SetDefault(slog.New(newLogger(os.Stderr, debug)))
+
+	if connString == "" {
+		slog.Info("No connection string specified, using pqlib style PG* environment variables instead")
+	}
+
 	if listenAddr == "" {
 		listenAddr = ":8080"
 	}
 
-	store, err := newTodoStore(context.Background(), connString)
+	store, err := newPostgresStore(context.Background(), connString)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Failed to initialize data store", err)
+		os.Exit(1)
 	}
 	defer store.close(context.Background())
 
-	r := chi.NewRouter()
-	r.Use(middleware.StripSlashes)
-	r.Get("/todo", newGetManyHandler(store))
-	r.Post("/todo", newPostHandler(store))
-	r.Get("/todo/{id}", newGetHandler(store))
-	r.Put("/todo/{id}", newPutHandler(store))
-	r.Delete("/todo/{id}", newDeleteHandler(store))
-
+	r := newRouter(store)
 	s := http.Server{
 		Addr:              listenAddr,
 		Handler:           r,
 		ReadHeaderTimeout: 5 * time.Second,
 		WriteTimeout:      5 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 
 	done := make(chan struct{})
 	go shutdown(context.Background(), &s, done)
 
-	log.Printf("Starting server, listening on %s", listenAddr)
+	slog.Info(fmt.Sprintf("Starting server, listening on %s", listenAddr))
 	err = s.ListenAndServe()
-	log.Println("Waiting for shutdown to complete...")
+	slog.Info("Waiting for shutdown to complete")
 	<-done
-	log.Fatal(err)
+	slog.Error("Server has shut down", err)
+}
+
+func shutdown(ctx context.Context, s *http.Server, done chan struct{}) {
+	sigch := make(chan os.Signal, 1)
+	signal.Notify(sigch, syscall.SIGINT, syscall.SIGTERM)
+	sig := <-sigch
+	slog.Warn(fmt.Sprintf("Got signal %v", sig))
+
+	childCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	if err := s.Shutdown(childCtx); err != nil {
+		slog.Error("Error during shutdown", err)
+	}
+	done <- struct{}{}
 }

@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
+	"fmt"
 	"sync"
 	"time"
 
@@ -12,29 +12,21 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/exp/slog"
 )
 
-const ossRDBMS = "https://ossrdbms-aad.database.windows.net"
+const ossRDBMS = "https://ossrdbms-aad.database.windows.net/.default"
 
 var defaultOpts = policy.TokenRequestOptions{Scopes: []string{ossRDBMS}}
 
-var errNoRows = errors.New("update affected no rows")
-
-type todo struct {
-	Id          int64  `json:"id"`
-	Description string `json:"description"`
-	Details     string `json:"details"`
-	Done        bool   `json:"done"`
-}
-
-type todoStore struct {
+type postgresStore struct {
 	pool        *pgxpool.Pool
 	accessToken azcore.AccessToken
 	mutex       sync.RWMutex
 }
 
-func newTodoStore(ctx context.Context, connString string) (*todoStore, error) {
-	store := todoStore{}
+func newPostgresStore(ctx context.Context, connString string) (*postgresStore, error) {
+	store := postgresStore{}
 
 	config, err := pgxpool.ParseConfig(connString)
 	if err != nil {
@@ -47,76 +39,77 @@ func newTodoStore(ctx context.Context, connString string) (*todoStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	store.pool = pool
 
 	if err := pool.Ping(ctx); err != nil {
 		return nil, err
 	}
+
+	store.pool = pool
 	return &store, nil
 }
 
-func (t *todoStore) getToken() string {
+func (t *postgresStore) getToken() string {
 	t.mutex.RLock()
 	defer t.mutex.RUnlock()
 	return t.accessToken.Token
 }
 
-func (t *todoStore) acquireToken(ctx context.Context) error {
+func (t *postgresStore) acquireToken(ctx context.Context) error {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
-		log.Printf("Error acquiring identity: %v", err)
+		slog.Error("Error acquiring identity", err)
 		return err
 	}
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 	at, err := cred.GetToken(ctx, defaultOpts)
 	if err != nil {
-		log.Printf("Error acquiring token: %v", err)
+		slog.Error("Error acquiring token", err)
 		return err
 	}
 	t.accessToken = at
 	return nil
 }
 
-func (t *todoStore) tokenValid() bool {
+func (t *postgresStore) tokenValid() bool {
 	t.mutex.RLock()
 	defer t.mutex.RUnlock()
 	return t.accessToken.ExpiresOn.After(time.Now().UTC())
 }
 
-func (t *todoStore) beforeAcquire(ctx context.Context, conn *pgx.Conn) bool {
-	log.Println("BeforeAcquire: Checking access token")
+func (t *postgresStore) beforeAcquire(ctx context.Context, conn *pgx.Conn) bool {
+	slog.Debug("BeforeAcquire: Checking access token")
 	token := t.getToken()
 	if token == "" {
-		log.Println("BeforeAcquire: No access token set")
+		slog.Debug("BeforeAcquire: No access token set")
 		return true
 	}
-	isValid := t.tokenValid()
-	log.Printf("BeforeAcquire: Access token still valid: %v", isValid)
-	return isValid
+	ok := t.tokenValid()
+	slog.Debug(fmt.Sprintf("BeforeAcquire: Access token still valid: %v", ok))
+	return ok
 }
 
-func (t *todoStore) beforeConnect(ctx context.Context, config *pgx.ConnConfig) error {
+func (t *postgresStore) beforeConnect(ctx context.Context, config *pgx.ConnConfig) error {
 	if config.Password != "" {
-		log.Println("BeforeConnect: Password is set")
+		slog.Debug("BeforeConnect: Password is set")
 		return nil
 	}
-	log.Println("BeforeConnect: No password set, checking access token...")
+	slog.Debug("BeforeConnect: No password set, checking access token")
 	if !t.tokenValid() {
-		log.Println("BeforeConnect: Acquiring access token...")
+		slog.Debug("BeforeConnect: Acquiring access token")
 		if err := t.acquireToken(ctx); err != nil {
 			return err
 		}
 	}
 	config.Password = t.getToken()
-	log.Printf("Acquired new access token: %s...", config.Password[:10])
+	slog.Info(fmt.Sprintf("Acquired new access token: %s...", config.Password[:10]))
 	return nil
 }
 
-func (t *todoStore) list(ctx context.Context, offset int, limit int) ([]todo, error) {
+func (t *postgresStore) list(ctx context.Context, offset int, limit int) ([]todo, error) {
 	rows, err := t.pool.Query(
 		ctx,
-		`SELECT id, description, details, done FROM todo OFFSET $1 LIMIT $2`,
+		`SELECT id, description, details, done FROM todo ORDER BY description OFFSET $1 LIMIT $2`,
 		int64(offset),
 		int64(limit))
 	if err != nil {
@@ -126,7 +119,7 @@ func (t *todoStore) list(ctx context.Context, offset int, limit int) ([]todo, er
 	return pgx.CollectRows(rows, pgx.RowToStructByPos[todo])
 }
 
-func (t *todoStore) findOne(ctx context.Context, id int) (todo, error) {
+func (t *postgresStore) find(ctx context.Context, id int) (todo, error) {
 	rows, err := t.pool.Query(
 		ctx,
 		`SELECT id, description, details, done FROM todo WHERE id = $1`,
@@ -135,15 +128,23 @@ func (t *todoStore) findOne(ctx context.Context, id int) (todo, error) {
 		return todo{}, err
 	}
 	defer rows.Close()
-	return pgx.CollectOneRow(rows, pgx.RowToStructByPos[todo])
+	item, err := pgx.CollectOneRow(rows, pgx.RowToStructByPos[todo])
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return todo{}, err
+		}
+		// Replace original error with our own sentinel error
+		return todo{}, errEmptyResultSet
+	}
+	return item, nil
 }
 
-func (t *todoStore) create(ctx context.Context, item todo) (todo, error) {
+func (t *postgresStore) create(ctx context.Context, item todo) (todo, error) {
 	var id int64
 	// We're using QueryRow() instead of Exec() since this allows us to capture the value of the RETURNING clause
 	row := t.pool.QueryRow(
 		ctx,
-		`INSERT INTO todo (id, description, details, done) VALUES (nextval('hibernate_sequence'), $1, $2, $3) RETURNING id`,
+		`INSERT INTO todo (id, description, details, done) VALUES (DEFAULT, $1, $2, $3) RETURNING id`,
 		item.Description, item.Details, item.Done)
 	err := row.Scan(&id)
 	if err != nil {
@@ -153,7 +154,7 @@ func (t *todoStore) create(ctx context.Context, item todo) (todo, error) {
 	return item, nil
 }
 
-func (t *todoStore) update(ctx context.Context, item todo) (todo, error) {
+func (t *postgresStore) update(ctx context.Context, item todo) (todo, error) {
 	tag, err := t.pool.Exec(
 		ctx,
 		`UPDATE todo SET description = $1, details = $2, done =$3 where id =$4`,
@@ -165,22 +166,25 @@ func (t *todoStore) update(ctx context.Context, item todo) (todo, error) {
 		return item, err
 	}
 	if tag.RowsAffected() == 0 {
-		return item, errNoRows
+		return item, errEmptyResultSet
 	}
 	return item, nil
 }
 
-func (t *todoStore) delete(ctx context.Context, id int) (bool, error) {
+func (t *postgresStore) delete(ctx context.Context, id int) error {
 	tag, err := t.pool.Exec(
 		ctx,
 		`DELETE FROM todo where id = $1`,
 		id)
 	if err != nil {
-		return false, err
+		return err
 	}
-	return tag.RowsAffected() == 1, nil
+	if tag.RowsAffected() == 0 {
+		return errEmptyResultSet
+	}
+	return nil
 }
 
-func (t *todoStore) close(ctx context.Context) {
+func (t *postgresStore) close(ctx context.Context) {
 	t.pool.Close()
 }
