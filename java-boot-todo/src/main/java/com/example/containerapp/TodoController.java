@@ -29,7 +29,7 @@ public class TodoController {
     @ResponseStatus(HttpStatus.CREATED)
     public Todo createTodo(@RequestBody Todo todo) {
         var newTodo = todoRepository.save(todo);
-        logger.info("Create new todo {}", newTodo.getId());
+        logger.info("Created new todo {}", newTodo.getId());
         return newTodo;
     }
 
@@ -41,9 +41,6 @@ public class TodoController {
 
     @GetMapping("{id}")
     public Optional<Todo> getTodo(@PathVariable Long id) {
-        if (id < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-        }
         logger.info("Querying todo {}", id);
         var todo = todoRepository.findById(id);
         if (todo.isEmpty()) {
@@ -56,9 +53,6 @@ public class TodoController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("{id}")
     public void deleteTodo(@PathVariable Long id) {
-        if (id < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-        }
         if (!todoRepository.existsById(id)) {
             logger.info("Todo {} not found", id);
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);

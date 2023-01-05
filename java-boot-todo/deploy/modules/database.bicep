@@ -23,6 +23,12 @@ param postgresLogin string
 @secure()
 param postgresLoginPassword string
 
+@description('Specifies the Azure AD PostgreSQL administrator user principal name.')
+param aadPostgresAdmin string
+
+@description('Specifies the Azure AD PostgreSQL administrator user\'s object ID.')
+param aadPostgresAdminObjectID string
+
 @description('Specifies the subnet resource ID of the delegated subnet for Azure Database.')
 param postgresSubnetId string
 
@@ -50,7 +56,7 @@ var firewallrules = [
   }
 ]
 
-resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-01-20-preview' = {
+resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-03-08-preview' = {
   name: server
   location: location
   sku: {
@@ -60,6 +66,11 @@ resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-01-20-pr
   properties: {
     administratorLogin: postgresLogin
     administratorLoginPassword: postgresLoginPassword
+    authConfig: {
+      activeDirectoryAuthEnabled: true
+      passwordAuthEnabled: true
+      tenantId: subscription().tenantId
+    }
     storage: {
       storageSizeGB: 32
     }
@@ -79,14 +90,25 @@ resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-01-20-pr
   }
 }
 
-resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2021-06-01' = if (deployDatabase) {
+resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-03-08-preview' = if (deployDatabase) {
   name: database
   parent: postgresServer
 }
 
+// resource postgresAzureADAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2022-03-08-preview' = {
+//   name: aadPostgresAdminObjectID
+//   parent: postgresServer
+//   properties: {
+//     principalName: aadPostgresAdmin
+//     principalType: 'User'
+//     tenantId: subscription().tenantId
+//   }
+// }
+
 @batchSize(1)
-resource firewallRules 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2021-06-01' = [for rule in firewallrules: if (deployAsPublic)  {
-  name: '${postgresServer.name}/${rule.name}'
+resource firewallRules 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-03-08-preview' = [for rule in firewallrules: if (deployAsPublic)  {
+  name: rule.name
+  parent: postgresServer
   properties: {
     startIpAddress: rule.startIpAddress
     endIpAddress: rule.endIpAddress

@@ -55,19 +55,9 @@ export CONTAINERAPP_POSTGRES_LOGIN_PWD="$(openssl rand -hex 20)##"
 ./deploy.sh
 ```
 
-The script relies on the user principal name of the user that is currently 
-logged in to Azure CLI. This allows you to run the application locally without any modifications, since the Azure AD plugin in PostgreSQL will
+The script sets the Azure AD user that is currently logged in to Azure CLI as database owner. 
+This allows you to run the application locally without any modifications, since the Azure AD plugin in PostgreSQL will
 [probe for a way to log in to Azure if no managed identity is available](https://learn.microsoft.com/en-us/java/api/overview/azure/identity-readme?view=azure-java-stable#authenticate-a-user-assigned-managed-identity-with-defaultazurecredential).    
-
-The current version of the script stops before deploying the application since the API version required to set an Azure AD administrator for Azure Database for PostgreSQL Flexible Server has not yet been published. 
-Instead the script will prompt you to [set the Azure AD administrator using the Azure portal](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/how-to-configure-sign-in-azure-ad-authentication). Make sure to set the same user as admininistrator that is logged in to Azure CLI, otherwise the deployment will fail. 
-So if `joerg@example.org` is currently logged in to Azure CLI when running 
-the script, `joerg@example.org` must also be set as Azure AD administrator for PostgreSQL. 
-
-Once you have set the Azure AD admininistrator, press Enter to continue running the script.  
-
-![Prompt to set Azure AD administrator](media/propmt.png)
-
 
 ## Deployment Options
 

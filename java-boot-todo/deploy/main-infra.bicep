@@ -17,6 +17,12 @@ param postgresLogin string
 @secure()
 param postgresLoginPassword string
 
+@description('Specifies the Azure AD PostgreSQL administrator user principal name.')
+param aadPostgresAdmin string
+
+@description('Specifies the Azure AD PostgreSQL administrator user\'s object ID.')
+param aadPostgresAdminObjectID string
+
 @description('Specifies the client IP address to whitelist in the database server\'s firewall.')
 param clientIP string = ''
 
@@ -40,6 +46,8 @@ module postgres 'modules/database.bicep' = {
     database: database
     postgresLogin: postgresLogin
     postgresLoginPassword:postgresLoginPassword
+    aadPostgresAdmin: aadPostgresAdmin
+    aadPostgresAdminObjectID: aadPostgresAdminObjectID
     clientIP: clientIP
     postgresSubnetId: network.outputs.databaseSubnetId
     privateDnsZoneId: network.outputs.privateDnsZoneId
