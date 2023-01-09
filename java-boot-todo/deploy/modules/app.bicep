@@ -52,6 +52,10 @@ resource containerApp 'Microsoft.App/containerApps@2022-03-01' = {
           name: 'postgres-user'
           value: secrets.postgres.user
         }
+        {
+          name: 'dd-apikey'
+          value: secrets.datadog.apiKey
+        }
       ]
     }
     template: {
@@ -79,6 +83,10 @@ resource containerApp 'Microsoft.App/containerApps@2022-03-01' = {
             {
               name: 'AZURE_CLIENT_ID'
               value: appIdentity.properties.clientId
+            }
+            {
+              name: 'DD_API_KEY'
+              secretRef: 'dd-apikey'
             }
           ]
           resources: {

@@ -21,10 +21,17 @@ param postgresServer string
 @description('Specifies the database name to use.')
 param database string
 
+@description('Specifies the Datadog API key.')
+@secure()
+param ddApiKey string
+
 var secrets = {
   postgres: {
     host: '${postgresServer}.postgres.database.azure.com'
     user: identityUPN
+  }
+  datadog: {
+    apiKey: ddApiKey
   }
 }
 
