@@ -20,7 +20,7 @@ location=${CONTAINERAPP_LOCATION:-"westeurope"}
 image=${CONTAINERAPP_IMAGE:-"joergjo/java-boot-todo:stable"}
 postgres_login=$CONTAINERAPP_POSTGRES_LOGIN
 postgres_login_pwd=$CONTAINERAPP_POSTGRES_LOGIN_PWD
-dd_api_key=${CONTAINERAPP_DD_API_KEY}
+dd_api_key=$CONTAINERAPP_DD_API_KEY
 database=${CONTAINERAPP_POSTGRES_DB-"demo"}
 timestamp=$(date +%s)
 client_ip=$(curl -s 'https://api.ipify.org?format=text')
