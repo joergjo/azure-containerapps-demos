@@ -20,6 +20,7 @@ location=${CONTAINERAPP_LOCATION:-"westeurope"}
 image=${CONTAINERAPP_IMAGE:-"joergjo/java-boot-todo:stable"}
 postgres_login=$CONTAINERAPP_POSTGRES_LOGIN
 postgres_login_pwd=$CONTAINERAPP_POSTGRES_LOGIN_PWD
+dd_api_key=${CONTAINERAPP_DD_API_KEY}
 database=${CONTAINERAPP_POSTGRES_DB-"demo"}
 timestamp=$(date +%s)
 client_ip=$(curl -s 'https://api.ipify.org?format=text')
@@ -82,7 +83,8 @@ fqdn=$(az deployment group create \
   --name "$app-$timestamp" \
   --template-file main-app.bicep \
   --parameters appName="$app" image="$image" environmentId="$env_id" \
-    identityUPN="$identity_upn" postgresServer="$db_server" database="$database"  \
+    identityUPN="$identity_upn" postgresServer="$db_server" database="$database" \
+    ddApiKey="$dd_api_key"
   --query properties.outputs.fqdn.value \
   --output tsv)
 
