@@ -84,7 +84,7 @@ fqdn=$(az deployment group create \
   --template-file main-app.bicep \
   --parameters appName="$app" image="$image" environmentId="$env_id" \
     identityUPN="$identity_upn" postgresServer="$db_server" database="$database" \
-    ddApiKey="$dd_api_key"
+    ddApiKey="$dd_api_key" \
   --query properties.outputs.fqdn.value \
   --output tsv)
 
