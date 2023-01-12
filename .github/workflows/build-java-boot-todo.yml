@@ -1,0 +1,67 @@
+name: Build and push container images
+concurrency: java-boot-todo-${{ github.ref }}
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - './java-boot-todo/src/main/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Define Docker meta data for image without Datadog support
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ${{ secrets.DOCKER_HUB_USERNAME }}/java-boot-todo
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha
+
+      - name: Define Docker meta data for image with Datadog support
+        id: meta-dd
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ${{ secrets.DOCKER_HUB_USERNAME }}/java-boot-todo
+          tags: |
+            type=raw,value=dd-latest,enable={{is_default_branch}}
+            type=sha,prefix=dd-sha-
+
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build and push without Datadog support
+        uses: docker/build-push-action@v3
+        with:
+          context: ./java-boot-todo
+          file: ./java-boot-todo/Dockerfile.buildkit
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Build and push with Datadog support
+        uses: docker/build-push-action@v3
+        with:
+          context: ./java-boot-todo
+          file: ./java-boot-todo/Dockerfile.dd.buildkit
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta-dd.outputs.tags }}
+          labels: ${{ steps.meta-dd.outputs.labels }}
