@@ -1,11 +1,16 @@
-# Azure Container App sample: Spring Boot app accessing Azure Database for PostgreSQL passwordless
+# Azure Container Apps sample: Spring Boot app accessing Azure Database for PostgreSQL passwordless
+
+## About
 
 This application is based on a [sample To Do API from Azure's Spring Boot docs](https://docs.microsoft.com/en-us/azure/developer/java/spring-framework/configure-spring-data-jpa-with-azure-postgresql) and has been enhanced to
-- use structured JSON logging with [logback](https://logback.qos.ch)
-- [seed test data](https://github.com/joergjo/azure-containerapps-demos/blob/175fee5363e8b1199bcf28bb0e87f15c7d3f12cc/java-boot-todo-dd/src/main/java/com/example/containerapp/TodoApplication.java#L25) in an empty database for any Spring Profile other than `prod`
 - use a [User-assigned Managed Identity](https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview) to [access the PostgreSQL database "passwordless"](https://learn.microsoft.com/en-us/azure/developer/java/spring-framework/migrate-postgresql-to-passwordless-connection).
+- 🔥 send telemetry to Datadog ([feature still in Beta](https://docs.datadoghq.com/serverless/azure_container_apps/))
+- use structured JSON logging with [logback](https://logback.qos.ch)
+- [seed test data](#spring-boot-profiles)
 
-At the time of writing, the official Azure documentation for passwordless connections  covers the use of Azure Database for PostgreSQL *Single Server*. Setting up Azure AD support for Flexible Server works differently and is currently not detailed in the documentation for an end-to-end scenario. 
+## Motivation
+
+At the time of writing, the official Azure documentation for passwordless connections covers the use of Azure Database for PostgreSQL *Single Server*. Setting up Azure AD support for Flexible Server works differently and is currently not detailed in the documentation for an end-to-end scenario. 
 
 This sample also demonstrates how to use a User-assigned Managed Identity, 
 because it solves the otherwise inevitable chickend-and-egg problem&mdash;
@@ -13,9 +18,12 @@ the application cannot be deployed unless the database model exists,
 but authorizing the application to access the database requires the application
 to exist if a System-assigend Managed identity is used...
 
+There are other "passwordless" samples available in the [Azure Samples repo](https://github.com/Azure-Samples/Passwordless-Connections-for-Java-Apps) that also make use of Flexible Server. 
+
+
 ## Prerequisites
 
-- [Azure CLI 2.0](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) (**v2.30** or newer)
+- [Azure CLI 2.0](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) (**v2.43** or newer)
 - Azure Container App extension for Azure CLI
 
   ```bash
@@ -34,15 +42,19 @@ The included [`deploy.sh`](deploy/deploy.sh) script allows you to deploy the app
 
 Before running the script, you must export the following environment variables:
 
-| Environment variable              | Purpose                               | Default value                   |
-| --------------------------------- | ------------------------------------- | ------------------------------- |
+| Environment variable              | Purpose                               | Default value        |
+| --------------------------------- | ------------------------------------- | -------------------- |
 | `CONTAINERAPP_RESOURCE_GROUP`     | Resource group to deploy to           | none                 |
 | `CONTAINERAPP_POSTGRES_LOGIN`     | PostgreSQL admin user login           | none                 |
 | `CONTAINERAPP_POSTGRES_LOGIN_PWD` | PostgreSQL admin user password        | none                 |
+| `CONTAINERAPP_DD_API_KEY`         | Datadog API Key                       | none                 |
 
 > `CONTAINERAPP_POSTGRES_LOGIN` and `CONTAINERAPP_POSTGRES_LOGIN_PWD` designate a regular,
 > non-Azure AD integrated PostgreSQL admin user. This user is currently required for deployment, but
 > _not_ used afterwards. 
+
+Depending on whether you have exported `CONTAINERAPP_DD_API_KEY`, the script will either deploy
+the app with or without Datadog support.
 
 Next, execute `deploy.sh`:
 
@@ -50,6 +62,7 @@ Next, execute `deploy.sh`:
 cd <path-to-project-directory>/deploy
 export CONTAINERAPP_RESOURCE_GROUP=todoapi-passwordless
 export CONTAINERAPP_POSTGRES_LOGIN=flexadmin
+# export CONTAINERAPP_DD_API_KEY=<your-dd-api-key>
 # Add non-letter characters to satisfy password strength requirement 
 export CONTAINERAPP_POSTGRES_LOGIN_PWD="$(openssl rand -hex 20)##"
 ./deploy.sh
@@ -87,17 +100,17 @@ _not_ injected in this network, but will be in a later version.
 
 ### Building the application on your machine
 
-Building the application yourself is only required if you want to change it or its configuration (e.g. replace PostgreSQL with MySQL).
+Building the application yourself is only required if you want to change it or its configuration (e.g., replace PostgreSQL with MySQL).
 
 The application has been set up using the [Spring Boot Initializer](https://start.spring.io) to use JDK 17 and Maven, so follow the usual steps to build a Spring Boot application in your favorite IDE or using the command line. If you are using [Visual Studio Code](https://code.visualstudio.com/), the editor will prompt to install all recommended extensions if you don't have them installed already.
 
-As mentioned before, in order to run the application locally, you must provide an alternate identity that the application can use to log in to Azure AD. 
-The simplest option is to make sure you are logged in to Azure CLI and your user has been granted access to the Flexible Server. If you have set up
-the Flexible Server with the included deployment script, this will be the case. 
+As mentioned before, if you run the application locally but connect to Azure Database, you must provide an alternate identity that the application can use to log in to Azure AD since there is no managed identity on your PC or Mac.
+
+The simplest option is to log in to Azure CLI and grant your user access to the Flexible Server. If you have set up the Flexible Server with the included deployment script, this will be the case. 
 
 ### Building the application's container image
 
-Prebuilt images are available on [Docker Hub](https://hub.docker.com/repository/docker/joergjo/java-boot-todo). This container image is used when you deploy the application with the included scripts.
+Prebuilt images with and without Datadog support are available on [Docker Hub](https://hub.docker.com/repository/docker/joergjo/java-boot-todo). These container images are used when you deploy the application with the included [deployment script](deploy/deploy.sh).
 
 If you want to build your own container image, use the included Docker Compose files:
 
@@ -110,10 +123,45 @@ $ docker push <your-registry>/java-boot-todo:<your-tag>
 
 > If you are using an older version of Docker, you may have to use `docker-compose build` (note the dash).
 
-The included Compose files make use of [multi-stage builds](https://docs.docker.com/develop/develop-images/multistage-build/), so they will work on any machine which has Docker (or similar container build tools) installed _without_ needing a local JDK or Maven installation.
+The included Compose files make use of [multi-stage builds](https://docs.docker.com/develop/develop-images/multistage-build/), so they will work on any machine which has Docker installed _without_ needing a local JDK and Maven installation.
 
 The Compose files can also be used to run the application locally:
 
-- `compose.yaml` runs the application locally, but requires a separate PostgreSQL database.
+- `compose.yaml` runs the application locally, but requires a separate PostgreSQL database (e.g., Azure Database or a locally installed PostgreSQL server)
 - `compose.all.yaml` runs the application and a PostgreSQL database container. In this case, username and password are used instead of Azure AD.
 
+### Datadog support
+
+Datadog support is provided by through a separate Dockerfile. By default, the Composes file will build the application
+without Datadog support. To build a container image with Datadog support, export `DOCKERFILE` as follows:
+
+```bash
+cd <path-to-project-directory>
+export DOCKERFILE=Dockerfile.dd.buildkit
+```
+
+Instead of exporting an environment variable, you can create an `.env` file in the repo's root directory. Docker Compose will evaluate the content of this file by default.
+
+```bash
+cd <path-to-project-directory>
+echo "DOCKERFILE=Dockerfile.dd.buildkit" > .env
+```
+
+The [Dockerfile](Dockerfile.dd.buildkit) sets the following Datadog specific environment variables
+```Dockerfile
+ENV DD_SERVICE=java-boot-todo
+ENV DD_ENV=dev
+ENV DD_VERSION=1.0.0
+ENV DD_PROFILING_ENABLED=true
+ENV DD_LOGS_ENABLED=true 
+```
+
+If you want to override them or set additional Datadog specific settings, add them in the application's [Bicep file](deploy/modules/app.bicep) directly.
+
+## Spring Boot Profiles
+
+`json-logging`: Enables JSON Logging instead of the standard Logback text format.
+
+`prod`: Disables seeding of test data. Enabled for all other profiles.
+
+`local`: Disables passwordless authentication and falls back to username/password. Useful for local development.

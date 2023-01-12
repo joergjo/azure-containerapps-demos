@@ -14,13 +14,19 @@ if [ -z "$CONTAINERAPP_POSTGRES_LOGIN_PWD" ]; then
   exit 1
 fi
 
-resource_group=$CONTAINERAPP_RESOURCE_GROUP
+image=${CONTAINERAPP_IMAGE:-"joergjo/java-boot-todo:datadog"}
+if [ -z "$CONTAINERAPP_DD_API_KEY" ]; then
+  echo "CONTAINERAPP_DD_API_KEY is not set. Deploying without Datadog support."
+  image=${CONTAINERAPP_IMAGE:-"joergjo/java-boot-todo:stable"}
+fi
+
+
+resource_group="$CONTAINERAPP_RESOURCE_GROUP"
 app=${CONTAINERAPP_NAME:-"todoapi"}
 location=${CONTAINERAPP_LOCATION:-"westeurope"}
-image=${CONTAINERAPP_IMAGE:-"joergjo/java-boot-todo:stable"}
-postgres_login=$CONTAINERAPP_POSTGRES_LOGIN
-postgres_login_pwd=$CONTAINERAPP_POSTGRES_LOGIN_PWD
-dd_api_key=$CONTAINERAPP_DD_API_KEY
+postgres_login="$CONTAINERAPP_POSTGRES_LOGIN"
+postgres_login_pwd="$CONTAINERAPP_POSTGRES_LOGIN_PWD"
+dd_api_key="$CONTAINERAPP_DD_API_KEY"
 database=${CONTAINERAPP_POSTGRES_DB-"demo"}
 timestamp=$(date +%s)
 client_ip=$(curl -s 'https://api.ipify.org?format=text')
