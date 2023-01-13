@@ -14,10 +14,10 @@ if [ -z "$CONTAINERAPP_POSTGRES_LOGIN_PWD" ]; then
   exit 1
 fi
 
-image=${CONTAINERAPP_IMAGE:-"joergjo/java-boot-todo:datadog"}
+image=${CONTAINERAPP_IMAGE:-"joergjo/java-boot-todo:dd-latest"}
 if [ -z "$CONTAINERAPP_DD_API_KEY" ]; then
   echo "CONTAINERAPP_DD_API_KEY is not set. Deploying without Datadog support."
-  image=${CONTAINERAPP_IMAGE:-"joergjo/java-boot-todo:stable"}
+  image=${CONTAINERAPP_IMAGE:-"joergjo/java-boot-todo:latest"}
 fi
 
 
