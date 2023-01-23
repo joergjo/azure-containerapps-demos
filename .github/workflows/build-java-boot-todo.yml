@@ -8,6 +8,7 @@ on:
       - 'main'
     paths:
       - './java-boot-todo/src/main/**'
+      - './java-boot-todo/pom.xml'
 
 jobs:
   build:
