@@ -34,6 +34,7 @@ There are other "passwordless" samples available in the [Azure Samples repo](htt
   az bicep upgrade
   ``` 
 - A bash shell. On Windows 10/11, [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/install) provides you the best experience.
+- The [PostgreSQL psql](https://www.postgresql.org/docs/current/app-psql.html) client (14.0 or later)
 
 
 ## [Deploy to an Azure Container App](#deploy-to-azure)
