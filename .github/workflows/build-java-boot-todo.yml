@@ -1,4 +1,4 @@
-name: Build and push container images
+name: Build and push container images for java-boot-todo
 concurrency: java-boot-todo-${{ github.ref }}
 
 on:

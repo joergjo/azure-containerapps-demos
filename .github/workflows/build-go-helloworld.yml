@@ -1,4 +1,4 @@
-name: Build and push container images
+name: Build and push container image for go-helloworld
 concurrency: go-helloworld-${{ github.ref }}
 
 on:
