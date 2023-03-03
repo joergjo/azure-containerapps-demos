@@ -7,13 +7,10 @@ param location string
 @description('Specifies the subnet resource ID for the Container App environment.')
 param infrastructureSubnetId string
 
-@description('Specifies the subnet resource ID for the Container App pods.')
-param runtimeSubnetId string
-
 var workspaceName = '${namePrefix}-logs'
 var environmentName = '${namePrefix}-env'
 
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: workspaceName
   location: location
   properties: {
@@ -23,7 +20,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-06
   }
 }
 
-resource environment 'Microsoft.App/managedEnvironments@2022-01-01-preview' = {
+resource environment 'Microsoft.App/managedEnvironments@2022-03-01' = {
   name: environmentName
   location: location
   properties: {
@@ -36,7 +33,6 @@ resource environment 'Microsoft.App/managedEnvironments@2022-01-01-preview' = {
     }
     vnetConfiguration: {
       infrastructureSubnetId: infrastructureSubnetId
-      runtimeSubnetId: runtimeSubnetId
     }
   }
 }

@@ -3,11 +3,11 @@ param location string = resourceGroup().location
 
 @description('Specifies the Container App\'s name.')
 @minLength(5)
-@maxLength(12)
+@maxLength(20)
 param appName string
 
 @description('Specifies the Container App\'s image.')
-param image string = 'joergjo/go-cronjob:latest'
+param image string 
 
 module network 'modules/network.bicep' = {
   name: 'network'
@@ -23,7 +23,6 @@ module environment 'modules/environment.bicep' = {
     location: location
     namePrefix: appName
     infrastructureSubnetId: network.outputs.infraSubnetId
-    runtimeSubnetId: network.outputs.runtimeSubnetId
   }
 }
 
