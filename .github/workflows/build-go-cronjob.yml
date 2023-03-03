@@ -7,8 +7,8 @@ on:
     branches:
       - 'main'
     paths:
-      - './go-cronjob/**'
-      - '!./go-cronjob/deploy/**'
+      - 'go-cronjob/**'
+      - '!go-cronjob/deploy/**'
 
 jobs:
   build:
