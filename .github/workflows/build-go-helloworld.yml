@@ -7,8 +7,8 @@ on:
     branches:
       - 'main'
     paths:
-      - './go-helloworld/**'
-      - '!./go-helloworld/deploy/**'
+      - 'go-helloworld/**'
+      - '!go-helloworld/deploy/**'
 
 jobs:
   build:
