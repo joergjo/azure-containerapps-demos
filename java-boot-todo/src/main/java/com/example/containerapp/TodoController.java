@@ -19,7 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/")
 public class TodoController {
     private final TodoRepository todoRepository;
-    private static final Logger logger = LoggerFactory.getLogger(TodoController.class);
+    private final Logger logger = LoggerFactory.getLogger(TodoController.class);
 
     public TodoController(TodoRepository todoRepository) {
         this.todoRepository = todoRepository;
