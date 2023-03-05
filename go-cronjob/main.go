@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"math/rand"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -47,6 +50,7 @@ func main() {
 	l := newLogger()
 	i := rand.Intn(len(worldTranslations))
 	l.Printf("Hello %s!", worldTranslations[i])
-	// Block longer than our end-start interval
-	time.Sleep(time.Duration(60 * time.Minute))
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+	<-ctx.Done()
 }
