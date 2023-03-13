@@ -24,7 +24,7 @@ resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-3
   name: identityUPN
 }
 
-resource containerApp 'Microsoft.App/containerApps@2022-03-01' = {
+resource containerApp 'Microsoft.App/containerApps@2022-10-01' = {
   name: name
   location: location
   identity: {

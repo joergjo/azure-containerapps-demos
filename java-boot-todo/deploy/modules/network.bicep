@@ -10,7 +10,7 @@ param location string
 @description('Specifies whether a private DNS zone will be deployed')
 param deployDnsZone bool = true
 
-resource vnet 'Microsoft.Network/virtualNetworks@2022-01-01' = {
+resource vnet 'Microsoft.Network/virtualNetworks@2022-07-01' = {
   name: vnetName
   location: location
   properties: {
