@@ -1,0 +1,15 @@
+version: "3.9"
+
+volumes:
+  todo-data:
+
+services:
+  todo-db:
+    image: postgres:${POSTGRES_TAG:-14-alpine}
+    ports:
+      - "5432:5432"
+    volumes:
+      - todo-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=pass@word1
+      - POSTGRES_DB=demo
