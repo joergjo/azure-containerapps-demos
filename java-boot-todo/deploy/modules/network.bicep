@@ -26,6 +26,9 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-09-01' = {
         name: 'infrastructure'
         properties: {
           addressPrefix: '10.150.0.0/23'
+          networkSecurityGroup: {
+            id: networkSecurityGroup.id
+          }
         }
       }
       {
@@ -40,6 +43,41 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-09-01' = {
               }
             }
           ]
+        }
+      }
+    ]
+  }
+}
+
+resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2021-02-01' = {
+  name: '${namePrefix}-infra-nsg'
+  location: location
+  properties: {
+    securityRules: [
+      {
+        name: 'AllowAnyHTTPSInbound'
+        properties: {
+          priority: 1000
+          access: 'Allow'
+          direction: 'Inbound'
+          destinationPortRange: '443'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          sourceAddressPrefix: '*'
+          destinationAddressPrefix: '*'
+        }
+      }
+      {
+        name: 'AllowAnyHTTPInbound'
+        properties: {
+          priority: 1001
+          access: 'Allow'
+          direction: 'Inbound'
+          destinationPortRange: '80'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          sourceAddressPrefix: '*'
+          destinationAddressPrefix: '*'
         }
       }
     ]
