@@ -15,25 +15,18 @@ param identityUPN string
 @description('Specifies the Containe App environment\'s resource id.')
 param environmentId string
 
-@description('Specifies the Azure Database for PostgreSQL server.')
-param postgresServer string
+@description('Specifies the Azure Database for PostgreSQL server\'s FQDN.')
+param postgresHost string
 
 @description('Specifies the database name to use.')
 param database string
 
 @description('Specifies the Datadog API key.')
 @secure()
-param ddApiKey string
+param datadogApiKey string
 
-var secrets = {
-  postgres: {
-    host: '${postgresServer}.postgres.database.azure.com'
-    user: identityUPN
-  }
-  datadog: {
-    apiKey: ddApiKey
-  }
-}
+
+
 
 module app 'modules/app.bicep' = {
   name: 'app'
@@ -44,7 +37,9 @@ module app 'modules/app.bicep' = {
     image: image
     identityUPN: identityUPN
     database: database
-    secrets: secrets
+    postgresHost: postgresHost
+    datadogApiKey: datadogApiKey
+
   }
 }
 

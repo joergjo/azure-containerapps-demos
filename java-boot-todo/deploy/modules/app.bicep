@@ -13,16 +13,66 @@ param image string
 @description('Specifies the container app\'s user assigned managed identity\'s UPN.')
 param identityUPN string
 
+@description('Specifies the Azure Database for PostgreSQL server\'s FQDN.')
+param postgresHost string
+
 @description('Specifies the database name to use.')
 param database string
 
-@description('Specifies the secrets used by the application.')
+@description('Specifies the Datadog API key.')
 @secure()
-param secrets object
+param datadogApiKey string
 
 resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-31-preview' existing = {
   name: identityUPN
 }
+
+var allSecrets = [
+  {
+    name: 'postgres-user'
+    value: identityUPN
+  }
+  {
+    name: 'datadog-api-key'
+    value: datadogApiKey
+  }
+  {
+    name: 'azure-client-id'
+    value: appIdentity.properties.clientId
+  }
+]
+
+var secrets = filter(allSecrets, s => !empty(s.value))
+
+var allEnvVars = [
+  {
+    name: 'POSTGRESQL_FQDN'
+    value: postgresHost
+  }
+  {
+    name: 'POSTGRESQL_USERNAME'
+    secretRef: 'postgres-user'
+  }
+  {
+    name: 'POSTGRES_DB'
+    value: database
+  }
+  {
+    name: 'SPRING_PROFILES_ACTIVE'
+    value: 'json-logging'
+  }
+  {
+    name: 'AZURE_CLIENT_ID'
+    secretRef: 'azure-client-id'
+  }
+  {
+    name: 'DD_API_KEY'
+    secretRef: 'datadog-api-key'
+  }
+]
+
+var secretNames = map(secrets, s => s.name)
+var envVars = filter(allEnvVars, e => (contains(e, 'secretRef') && contains(secretNames, e.secretRef)) || contains(e, 'value'))
 
 resource containerApp 'Microsoft.App/containerApps@2022-10-01' = {
   name: name
@@ -43,52 +93,14 @@ resource containerApp 'Microsoft.App/containerApps@2022-10-01' = {
       dapr: {
         enabled: false
       }
-      secrets: [
-        {
-          name: 'postgres-host'
-          value: secrets.postgres.host
-        }
-        {
-          name: 'postgres-user'
-          value: secrets.postgres.user
-        }
-        {
-          name: 'dd-apikey'
-          value: secrets.datadog.apiKey
-        }
-      ]
+      secrets: secrets
     }
     template: {
       containers: [
         {
           image: image
           name: name
-          env: [
-            {
-              name: 'POSTGRESQL_FQDN'
-              secretRef: 'postgres-host'
-            }
-            {
-              name: 'POSTGRESQL_USERNAME'
-              secretRef: 'postgres-user'
-            }
-            {
-              name: 'POSTGRES_DB'
-              value: database
-            }
-            {
-              name: 'SPRING_PROFILES_ACTIVE'
-              value: 'json-logging'
-            }
-            {
-              name: 'AZURE_CLIENT_ID'
-              value: appIdentity.properties.clientId
-            }
-            {
-              name: 'DD_API_KEY'
-              secretRef: 'dd-apikey'
-            }
-          ]
+          env: envVars
           resources: {
             cpu: json('1.0')
             memory: '2Gi'
@@ -97,6 +109,7 @@ resource containerApp 'Microsoft.App/containerApps@2022-10-01' = {
             {
               type: 'startup'
               httpGet: {
+                scheme: 'HTTP'
                 path: '/actuator/health/liveness'
                 port: 4004
               }
@@ -106,6 +119,7 @@ resource containerApp 'Microsoft.App/containerApps@2022-10-01' = {
             {
               type: 'liveness'
               httpGet: {
+                scheme: 'HTTP'
                 path: '/actuator/health/liveness'
                 port: 4004
               }
@@ -113,6 +127,7 @@ resource containerApp 'Microsoft.App/containerApps@2022-10-01' = {
             {
               type: 'readiness'
               httpGet: {
+                scheme: 'HTTP'
                 path: '/actuator/health/readiness'
                 port: 4004
               }

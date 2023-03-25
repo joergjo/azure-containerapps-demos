@@ -20,7 +20,6 @@ if [ -z "$CONTAINERAPP_DD_API_KEY" ]; then
   image=${CONTAINERAPP_IMAGE:-"joergjo/java-boot-todo:latest"}
 fi
 
-
 resource_group="$CONTAINERAPP_RESOURCE_GROUP"
 app=${CONTAINERAPP_NAME:-"todoapi"}
 location=${CONTAINERAPP_LOCATION:-"westeurope"}
@@ -33,7 +32,8 @@ client_ip=$(curl -s 'https://api.ipify.org?format=text')
 
 az group create \
   --resource-group "$resource_group" \
-  --location "$location"
+  --location "$location" \
+  --output none
 
 current_user_upn=$(az ad signed-in-user show --query userPrincipalName --output tsv)
 current_user_objectid=$(az ad signed-in-user show --query id --output tsv)
@@ -42,12 +42,16 @@ identity_upn=$(az deployment group create \
   --resource-group "$resource_group" \
   --name "env-$timestamp" \
   --template-file main-infra.bicep \
-  --parameters namePrefix="$app" database="$database" \
+  --parameters namePrefix="$app" clientIP="$client_ip" database="$database" \
     aadPostgresAdmin="$current_user_upn" aadPostgresAdminObjectID="$current_user_objectid" \
     postgresLogin="$postgres_login" postgresLoginPassword="$postgres_login_pwd" \
-    clientIP="$client_ip" \
   --query properties.outputs.identityUPN.value \
   --output tsv)
+
+if [ $? -ne 0 ]; then
+  echo "Bicep deployment failed. Please check the error message above."
+  exit 1
+fi
 
 db_server=$(az deployment group show \
   --resource-group "$resource_group" \
@@ -55,12 +59,19 @@ db_server=$(az deployment group show \
   --query properties.outputs.postgresServer.value \
   --output tsv)
 
+db_host=$(az deployment group show \
+  --resource-group "$resource_group" \
+  --name "env-$timestamp" \
+  --query properties.outputs.postgresHost.value \
+  --output tsv)
+
 az deployment group create \
   --resource-group "$resource_group" \
   --name "aad-admin-$timestamp" \
   --template-file modules/dbadmin.bicep \
   --parameters server="$db_server" \
-    aadPostgresAdmin="$current_user_upn" aadPostgresAdminObjectID="$current_user_objectid"
+    aadPostgresAdmin="$current_user_upn" aadPostgresAdminObjectID="$current_user_objectid" \
+  --output none
 
 if [ $? -ne 0 ]; then
   echo "Bicep deployment failed. Please check the error message above."
@@ -76,7 +87,7 @@ CREATE DATABASE "${database}";
 GRANT ALL PRIVILEGES ON DATABASE "${database}" TO "${identity_upn}";
 EOF
 
-psql "host=${db_server}.postgres.database.azure.com user=${current_user_upn} dbname=postgres sslmode=require" -f prepare-db.generated.sql
+psql "host=${db_host} user=${current_user_upn} dbname=postgres sslmode=require" -f prepare-db.generated.sql
 
 env_id=$(az deployment group show \
   --resource-group "$resource_group" \
@@ -89,9 +100,15 @@ fqdn=$(az deployment group create \
   --name "$app-$timestamp" \
   --template-file main-app.bicep \
   --parameters appName="$app" image="$image" environmentId="$env_id" \
-    identityUPN="$identity_upn" postgresServer="$db_server" database="$database" \
-    ddApiKey="$dd_api_key" \
+    identityUPN="$identity_upn" postgresHost="$db_host" database="$database" \
+    datadogApiKey="$dd_api_key" \
   --query properties.outputs.fqdn.value \
   --output tsv)
 
-echo "Application has been deployed successfully. You can access it at https://$fqdn"
+if [ $? -ne 0 ]; then
+  echo "Bicep deployment failed. Please check the error message above."
+  exit 1
+fi
+
+echo "Application has been deployed successfully to $resource_group."
+echo "You can access it at https://$fqdn."

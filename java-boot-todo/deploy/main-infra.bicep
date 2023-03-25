@@ -7,7 +7,7 @@ param location string = resourceGroup().location
 param namePrefix string
 
 @description('Specifies the database name to use.')
-param database string
+param database string = ''
 
 @description('Specifies the PostgreSQL login name.')
 @secure()
@@ -30,19 +30,15 @@ module network 'modules/network.bicep' = {
   name: 'network'
   params: {
     location: location
-    vnetName: '${namePrefix}-vnet'
-    privateDnsZoneName: '${namePrefix}.postgres.database.azure.com'
+    namePrefix: namePrefix
     deployDnsZone: (clientIP == '')
   }
 }
-
-var postgresServer = 'server${uniqueString(resourceGroup().id)}'
 
 module postgres 'modules/database.bicep' = {
   name: 'postgres'
   params: {
     location: location
-    server: postgresServer 
     database: database
     postgresLogin: postgresLogin
     postgresLoginPassword:postgresLoginPassword
@@ -51,7 +47,7 @@ module postgres 'modules/database.bicep' = {
     clientIP: clientIP
     postgresSubnetId: network.outputs.databaseSubnetId
     privateDnsZoneId: network.outputs.privateDnsZoneId
-    deployDatabase: false
+    // deployDatabase: false
   }
 }
 
@@ -66,4 +62,5 @@ module environment 'modules/environment.bicep' = {
 
 output environmentId string = environment.outputs.environmentId
 output identityUPN string = environment.outputs.identityUPN
-output postgresServer string = postgresServer
+output postgresServer string = postgres.outputs.serverName
+output postgresHost string = postgres.outputs.serverFqdn
