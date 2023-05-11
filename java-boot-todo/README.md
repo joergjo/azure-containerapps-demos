@@ -39,8 +39,7 @@ There are other "passwordless" samples available in the [Azure Samples repo](htt
 
 ## [Deploy to an Azure Container App](#deploy-to-azure)
 
-The included [`deploy.sh`](deploy/deploy.sh) script allows you to deploy the application as an Azure Container App with all required dependencies.
-
+The bash script [`deploy.sh`](deploy/deploy.sh) allows you to deploy the application as an Azure Container App with all required dependencies.
 Before running the script, you must export the following environment variables:
 
 | Environment variable              | Purpose                               | Default value        |
@@ -49,6 +48,7 @@ Before running the script, you must export the following environment variables:
 | `CONTAINERAPP_POSTGRES_LOGIN`     | PostgreSQL admin user login           | none                 |
 | `CONTAINERAPP_POSTGRES_LOGIN_PWD` | PostgreSQL admin user password        | none                 |
 | `CONTAINERAPP_DD_API_KEY`         | Datadog API Key                       | none                 |
+| `CONTAINERAPP_DD_APPLICATION_KEY` | Datadog Application Key               | none                 |
 
 > `CONTAINERAPP_POSTGRES_LOGIN` and `CONTAINERAPP_POSTGRES_LOGIN_PWD` designate a regular,
 > non-Azure AD integrated PostgreSQL admin user. This user is currently required for deployment, but
@@ -63,9 +63,11 @@ Next, execute `deploy.sh`:
 cd <path-to-project-directory>/deploy
 export CONTAINERAPP_RESOURCE_GROUP=todoapi-passwordless
 export CONTAINERAPP_POSTGRES_LOGIN=flexadmin
-# export CONTAINERAPP_DD_API_KEY=<your-dd-api-key>
 # Add non-letter characters to satisfy password strength requirement 
 export CONTAINERAPP_POSTGRES_LOGIN_PWD="$(openssl rand -hex 20)##"
+# Export to enable Datadog support
+# export CONTAINERAPP_DD_API_KEY=<your-dd-api-key>
+# export CONTAINERAPP_DD_APPLICATION_KEY=<your-dd-application-key>
 ./deploy.sh
 ```
 
@@ -81,19 +83,18 @@ You can control additional deployment details (e.g., the Azure region to deploy 
 | --------------------------------- | ------------------------------------- | ------------------------------- |
 | `CONTAINERAPP_LOCATION`           | Azure region to deploy to             | `westeurope`                    |
 | `CONTAINERAPP_NAME`               | Name of the Azure Container App       | `todoapi`                       |
-| `CONTAINERAPP_IMAGE`              | Application container image           | `joergjo/java-boot-todo:stable` |
+| `CONTAINERAPP_IMAGE`              | Application container image           | `joergjo/java-boot-todo:latest` or `joergjo/java-boot-todo:dd-latest`  |
 | `CONTAINERAPP_POSTGRES_DB`        | Database name used by the application |  `demo`                         |
 
 
 ## Deployed Resources
 
-The script and the included Bicep templates create the following Azure resources:
+The Bicep templates create the following Azure resources:
 - An [Azure Container App environment](https://docs.microsoft.com/en-us/azure/container-apps/environment).
 - An [Azure Container App](https://learn.microsoft.com/en-us/azure/container-apps/overview) for the application.
-- A [Log Analytics workspace](https://docs.microsoft.com/en-us/azure/container-apps/monitor?tabs=bash). Container Apps environments require this. The application logs to stdout and hence its log will be written to the workspace, but this can be turned off.
+- A [Log Analytics workspace](https://docs.microsoft.com/en-us/azure/container-apps/monitor?tabs=bash). Container Apps environments require this. The application logs to stdout and hence its log will be written to the workspace, but this can be turned off. Note that if you enable Datadog support, the logs will be written to both Datadog _and_ Log Analytics.
 - An [Azure Database for PostgreSQL Flexible Server](https://docs.microsoft.com/en-us/azure/postgresql/flexible-server/overview) that supports Azure AD authenticatiob. This is required by the application.
-- [A Virtual Network for the Container Apps environment](https://docs.microsoft.com/en-us/azure/container-apps/vnet-custom?tabs=bash&pivots=azure-cli). Since the deployment script  needs access to the PostgreSQL server, the Flexible Server is currently
-_not_ injected in this network, but will be in a later version. 
+- [A Virtual Network for the Container Apps environment](https://docs.microsoft.com/en-us/azure/container-apps/vnet-custom?tabs=bash&pivots=azure-cli). Since the deployment script requires access to the PostgreSQL server, the Flexible Server is _not_ injected in the virtual network. 
 - A [User-assigned Managed Identity](https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview) for the application.
 
 
@@ -107,7 +108,7 @@ The application has been set up using the [Spring Boot Initializer](https://star
 
 As mentioned before, if you run the application locally but connect to Azure Database, you must provide an alternate identity that the application can use to log in to Azure AD since there is no managed identity on your PC or Mac.
 
-The simplest option is to log in to Azure CLI and grant your user access to the Flexible Server. If you have set up the Flexible Server with the included deployment script, this will be the case. 
+The simplest option is to log in to Azure CLI and grant your user access to the Flexible Server. If you have set up the Flexible Server with the included deployment script, this will be the case. See this [article](https://learn.microsoft.com/en-us/azure/developer/java/spring-framework/authentication) to understand how this works.
 
 ### Building the application's container image
 
@@ -163,6 +164,6 @@ If you want to override them or set additional Datadog specific settings, add th
 
 `json-logging`: Enables JSON Logging instead of the standard Logback text format.
 
-`prod`: Disables seeding of test data. Enabled for all other profiles.
+`prod`: Disables seeding of test data. All other profiles will seed test data.
 
 `local`: Disables passwordless authentication and falls back to username/password. Useful for local development.

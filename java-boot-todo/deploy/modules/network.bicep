@@ -9,6 +9,10 @@ param privateDnsZoneName string = '${namePrefix}.postgres.database.azure.com'
 @description('Specifies the location to deploy to.')
 param location string
 
+@description('Specifies the name of the private DNS zone.')
+param privateDnsZoneName string = '${namePrefix}.postgres.database.azure.com'
+
+
 @description('Specifies whether a private DNS zone will be deployed')
 param deployDnsZone bool = true
 

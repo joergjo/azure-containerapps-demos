@@ -95,6 +95,7 @@ resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2
   parent: postgresServer
 }
 
+// Currently disabled - deploymment fails with if the AAD admin is specified like this.
 // resource postgresAzureADAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2022-12-01' = {
 //   name: aadPostgresAdminObjectID
 //   parent: postgresServer
