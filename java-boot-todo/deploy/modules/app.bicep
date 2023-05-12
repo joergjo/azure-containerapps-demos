@@ -30,8 +30,12 @@ param ddApplicationKey string
 @description('Specifies the Datadog site.')
 param ddSite string
 
-@description('Specifies the Datadog environment.')
+@description('Specifies the Datadog environment tag.')
 param ddEnv string
+
+@description('Specifies the Datadog version tag.')
+param ddVersion string
+
 
 resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-31-preview' existing = {
   name: identityUPN
@@ -94,6 +98,10 @@ var allEnvVars = [
   {
     name: 'DD_SITE'
     value: ddSite
+  }
+  {
+    name: 'DD_VERSION'
+    value: ddVersion
   }
 ]
 

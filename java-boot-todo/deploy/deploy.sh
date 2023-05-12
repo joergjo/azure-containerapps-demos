@@ -27,6 +27,7 @@ postgres_login="$CONTAINERAPP_POSTGRES_LOGIN"
 postgres_login_pwd="$CONTAINERAPP_POSTGRES_LOGIN_PWD"
 dd_api_key="$CONTAINERAPP_DD_API_KEY"
 dd_application_key="$CONTAINERAPP_DD_APPLICATION_KEY"
+dd_version="$CONTAINERAPP_DD_VERSION"
 database=${CONTAINERAPP_POSTGRES_DB-"demo"}
 timestamp=$(date +%s)
 client_ip=$(curl -s 'https://api.ipify.org?format=text')
@@ -105,6 +106,7 @@ fqdn=$(az deployment group create \
   --parameters appName="$app" image="$image" environmentId="$env_id" \
     identityUPN="$identity_upn" postgresHost="$db_host" database="$database" \
     ddApiKey="$dd_api_key" ddApplicationKey="$dd_application_key" \
+    ddVersion="$dd_version" \
   --query properties.outputs.fqdn.value \
   --output tsv)
 
