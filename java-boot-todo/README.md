@@ -131,6 +131,7 @@ The Compose files can also be used to run the application locally:
 
 - `compose.yaml` runs the application locally, but requires a separate PostgreSQL database (e.g., Azure Database or a locally installed PostgreSQL server)
 - `compose.all.yaml` runs the application and a PostgreSQL database container. In this case, username and password are used instead of Azure AD.
+- `compose.db.yaml` runs a PostgreSQL database container. In this case, username and password are used instead of Azure AD.
 
 ### Datadog support
 

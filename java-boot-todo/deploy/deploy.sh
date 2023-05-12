@@ -88,7 +88,9 @@ CREATE DATABASE "${database}";
 GRANT ALL PRIVILEGES ON DATABASE "${database}" TO "${identity_upn}";
 EOF
 
-psql "host=${db_host} user=${current_user_upn} dbname=postgres sslmode=require" -f prepare-db.generated.sql
+psql "host=${db_host} user=${current_user_upn} dbname=postgres sslmode=require" \
+  -f prepare-db.generated.sql \
+  -v "ON_ERROR_STOP=1"
 
 env_id=$(az deployment group show \
   --resource-group "$resource_group" \
@@ -102,7 +104,7 @@ fqdn=$(az deployment group create \
   --template-file main-app.bicep \
   --parameters appName="$app" image="$image" environmentId="$env_id" \
     identityUPN="$identity_upn" postgresHost="$db_host" database="$database" \
-    datadogApiKey="$dd_api_key" \
+    ddApiKey="$dd_api_key" ddApplicationKey="$dd_application_key" \
   --query properties.outputs.fqdn.value \
   --output tsv)
 

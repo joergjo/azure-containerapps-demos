@@ -3,9 +3,6 @@
 @maxLength(20)
 param namePrefix string
 
-@description('Specifies the name of the private DNS zone.')
-param privateDnsZoneName string = '${namePrefix}.postgres.database.azure.com'
-
 @description('Specifies the location to deploy to.')
 param location string
 

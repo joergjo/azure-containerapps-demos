@@ -23,9 +23,17 @@ param database string
 
 @description('Specifies the Datadog API key.')
 @secure()
-param datadogApiKey string
+param ddApiKey string
 
+@description('Specifies the Datadog application key.')
+@secure()
+param ddApplicationKey string
 
+@description('Specifies the Datadog site.')
+param ddSite string = 'datadoghq.com'
+
+@description('Specifies the Datadog environment.')
+param ddEnv string = 'dev'
 
 
 module app 'modules/app.bicep' = {
@@ -38,8 +46,10 @@ module app 'modules/app.bicep' = {
     identityUPN: identityUPN
     database: database
     postgresHost: postgresHost
-    datadogApiKey: datadogApiKey
-
+    ddApiKey: ddApiKey
+    ddApplicationKey: ddApplicationKey
+    ddSite: ddSite
+    ddEnv: ddEnv
   }
 }
 

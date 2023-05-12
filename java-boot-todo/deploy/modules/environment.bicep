@@ -38,7 +38,7 @@ resource environment 'Microsoft.App/managedEnvironments@2022-10-01' = {
 
 resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   location: location
-  name: '${namePrefix}-mi'
+  name: '${namePrefix}-${uniqueString(resourceGroup().id)}-mi'
 }
 
 output environmentId string = environment.id

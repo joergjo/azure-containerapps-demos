@@ -21,7 +21,17 @@ param database string
 
 @description('Specifies the Datadog API key.')
 @secure()
-param datadogApiKey string
+param ddApiKey string
+
+@description('Specifies the Datadog application key.')
+@secure()
+param ddApplicationKey string
+
+@description('Specifies the Datadog site.')
+param ddSite string
+
+@description('Specifies the Datadog environment.')
+param ddEnv string
 
 resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-31-preview' existing = {
   name: identityUPN
@@ -34,7 +44,11 @@ var allSecrets = [
   }
   {
     name: 'datadog-api-key'
-    value: datadogApiKey
+    value: ddApiKey
+  }
+  {
+    name: 'datadog-application-key'
+    value: ddApplicationKey
   }
   {
     name: 'azure-client-id'
@@ -68,6 +82,18 @@ var allEnvVars = [
   {
     name: 'DD_API_KEY'
     secretRef: 'datadog-api-key'
+  }
+  {
+    name: 'DD_APPLICATION_KEY'
+    secretRef: 'datadog-application-key'
+  }
+  {
+    name: 'DD_ENV'
+    value: ddEnv
+  }
+  {
+    name: 'DD_SITE'
+    value: ddSite
   }
 ]
 
