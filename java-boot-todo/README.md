@@ -84,7 +84,10 @@ You can control additional deployment details (e.g., the Azure region to deploy 
 | `CONTAINERAPP_LOCATION`           | Azure region to deploy to             | `westeurope`                    |
 | `CONTAINERAPP_NAME`               | Name of the Azure Container App       | `todoapi`                       |
 | `CONTAINERAPP_IMAGE`              | Application container image           | `joergjo/java-boot-todo:latest` or `joergjo/java-boot-todo:dd-latest`  |
-| `CONTAINERAPP_POSTGRES_DB`        | Database name used by the application |  `demo`                         |
+| `CONTAINERAPP_POSTGRES_DB`        | Database name used by the application | `demo`                         |
+| `CONTAINERAPP_DD_SITE`            | Datadog site                          | `datadoghq.com`                 |
+| `CONTAINERAPP_DD_ENV`             | Datadog `env` tag                     | `dev`                           |
+| `CONTAINERAPP_DD_VERSION`         | Datadog `version` tag                 | `1.0.0`                           |
 
 
 ## Deployed Resources
@@ -153,14 +156,11 @@ echo "DOCKERFILE=Dockerfile.dd.buildkit" > .env
 The [Dockerfile](Dockerfile.dd.buildkit) sets the following Datadog specific environment variables
 ```Dockerfile
 ENV DD_SERVICE=java-boot-todo
-ENV DD_ENV=dev
 ENV DD_VERSION=1.0.0
 ENV DD_PROFILING_ENABLED=true
 ENV DD_LOGS_ENABLED=true 
+ENV DD_TRACE_ENABLED=true
 ```
-
-If you want to override them or set additional Datadog specific settings, add them in the application's [Bicep file](deploy/modules/app.bicep) directly.
-
 ## Spring Boot Profiles
 
 `json-logging`: Enables JSON Logging instead of the standard Logback text format.
