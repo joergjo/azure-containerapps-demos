@@ -10,7 +10,7 @@ COPY pom.xml .
 RUN ./mvnw -B dependency:go-offline 
 
 COPY src src
-RUN ./mvnw -B clean package -DskipTests
+RUN ./mvnw -B -DskipTests clean package 
 
 FROM base AS final
 WORKDIR /app

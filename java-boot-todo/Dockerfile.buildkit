@@ -8,7 +8,7 @@ COPY mvnw  .
 COPY .mvn .mvn
 COPY pom.xml .
 COPY src src
-RUN --mount=type=cache,target=/root/.m2 ./mvnw -B clean package -DskipTests
+RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -DskipTests clean package 
 
 FROM base AS final
 WORKDIR /app

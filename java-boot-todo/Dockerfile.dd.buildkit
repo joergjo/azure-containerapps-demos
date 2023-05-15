@@ -1,19 +1,22 @@
+ARG revision=1.0.0
 FROM eclipse-temurin:17-jre-jammy AS base
 EXPOSE 8080
+ARG revision
 ENV DD_SERVICE=java-boot-todo
-ENV DD_VERSION=1.0.0
+ENV DD_VERSION=${revision}
 ENV DD_PROFILING_ENABLED=true
 ENV DD_LOGS_ENABLED=true
 ENV DD_TRACE_ENABLED=true
 
 FROM eclipse-temurin:17-jdk-jammy AS build
+ARG revision
 WORKDIR /build
 
 COPY mvnw  .
 COPY .mvn .mvn
 COPY pom.xml .
 COPY src src
-RUN --mount=type=cache,target=/root/.m2 ./mvnw -B clean package -DskipTests
+RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -DskipTests -Drevision=${revision} clean package
 
 FROM base AS final
 WORKDIR /app

@@ -35,10 +35,6 @@ param ddSite string = 'datadoghq.com'
 @description('Specifies the Datadog environment tag.')
 param ddEnv string = 'dev'
 
-@description('Specifies the Datadog version tag.')
-param ddVersion string = '1.0.0'
-
-
 module app 'modules/app.bicep' = {
   name: 'app'
   params: {
@@ -53,7 +49,6 @@ module app 'modules/app.bicep' = {
     ddApplicationKey: ddApplicationKey
     ddSite: ddSite
     ddEnv: ddEnv
-    ddVersion: ddVersion
   }
 }
 

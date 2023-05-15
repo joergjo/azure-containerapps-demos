@@ -57,8 +57,6 @@ Before running the script, you must export the following environment variables:
 Depending on whether you have exported `CONTAINERAPP_DD_API_KEY`, the script will either deploy
 the app with or without Datadog support.
 
-Next, execute `deploy.sh`:
-
 ```bash
 cd <path-to-project-directory>/deploy
 export CONTAINERAPP_RESOURCE_GROUP=todoapi-passwordless
@@ -68,6 +66,11 @@ export CONTAINERAPP_POSTGRES_LOGIN_PWD="$(openssl rand -hex 20)##"
 # Export to enable Datadog support
 # export CONTAINERAPP_DD_API_KEY=<your-dd-api-key>
 # export CONTAINERAPP_DD_APPLICATION_KEY=<your-dd-application-key>
+```
+
+Next, execute `deploy.sh`:
+
+```bash
 ./deploy.sh
 ```
 
@@ -87,7 +90,6 @@ You can control additional deployment details (e.g., the Azure region to deploy 
 | `CONTAINERAPP_POSTGRES_DB`        | Database name used by the application | `demo`                         |
 | `CONTAINERAPP_DD_SITE`            | Datadog site                          | `datadoghq.com`                 |
 | `CONTAINERAPP_DD_ENV`             | Datadog `env` tag                     | `dev`                           |
-| `CONTAINERAPP_DD_VERSION`         | Datadog `version` tag                 | `1.0.0`                           |
 
 
 ## Deployed Resources
@@ -153,18 +155,40 @@ cd <path-to-project-directory>
 echo "DOCKERFILE=Dockerfile.dd.buildkit" > .env
 ```
 
-The [Dockerfile](Dockerfile.dd.buildkit) sets the following Datadog specific environment variables
+The [Dockerfile](Dockerfile.dd.buildkit) sets the following Datadog specific environment variables:
 ```Dockerfile
+ARG revision=1.0.0
+...
 ENV DD_SERVICE=java-boot-todo
-ENV DD_VERSION=1.0.0
+ENV DD_VERSION=${revision}
 ENV DD_PROFILING_ENABLED=true
-ENV DD_LOGS_ENABLED=true 
+ENV DD_LOGS_ENABLED=true
 ENV DD_TRACE_ENABLED=true
 ```
+
+While I chose to hard-code the service name tag, you can override the version tag by setting the environment variable `REVISION`, which sets the Docker build arg `revision`. This also overrides the `version` attribute of the project's `pom.xml`, so that Datadog's version tag and the artifact's version always match.
+
+To override the version, export `REVISION`:
+
+```bash
+cd <path-to-project-directory>
+export DOCKERFILE=Dockerfile.dd.buildkit
+export REVISION=2.0.0
+```
+
+Or add it to your `.env`file:
+
+```bash
+cd <path-to-project-directory>
+echo "DOCKERFILE=Dockerfile.dd.buildkit" > .env
+echo "REVISION=2.0.0" >> .env
+```
+
+
 ## Spring Boot Profiles
 
-`json-logging`: Enables JSON Logging instead of the standard Logback text format.
+The project uses a few Spring Boot profiles to enable or disable certain features:
 
-`prod`: Disables seeding of test data. All other profiles will seed test data.
-
-`local`: Disables passwordless authentication and falls back to username/password. Useful for local development.
+- `json-logging`: Enables JSON Logging instead of the standard Logback text format.
+- `prod`: Disables seeding of test data. The application's database will be empty.
+- `local`: Disables passwordless authentication and falls back to username/password authentication. This is used for local development with Docker Compose.

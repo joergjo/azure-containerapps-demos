@@ -85,8 +85,6 @@ export PGPASSWORD=$token
 
 cat << EOF > prepare-db.generated.sql
 SELECT * FROM pgaadauth_create_principal('${identity_upn}', false, false);
-CREATE DATABASE "${database}";
-GRANT ALL PRIVILEGES ON DATABASE "${database}" TO "${identity_upn}";
 EOF
 
 psql "host=${db_host} user=${current_user_upn} dbname=postgres sslmode=require" \
@@ -106,7 +104,6 @@ fqdn=$(az deployment group create \
   --parameters appName="$app" image="$image" environmentId="$env_id" \
     identityUPN="$identity_upn" postgresHost="$db_host" database="$database" \
     ddApiKey="$dd_api_key" ddApplicationKey="$dd_application_key" \
-    ddVersion="$dd_version" \
   --query properties.outputs.fqdn.value \
   --output tsv)
 

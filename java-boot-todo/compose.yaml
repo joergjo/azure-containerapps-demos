@@ -5,6 +5,8 @@ services:
     build:
       context: .
       dockerfile: ${DOCKERFILE:-Dockerfile.buildkit}
+      args:
+        - revision=${REVISION:-1.0.0}
     image: ${IMAGE:-joergjo/java-boot-todo}
     ports:
       - "8080:8080"
