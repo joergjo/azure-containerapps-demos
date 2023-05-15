@@ -38,7 +38,7 @@ param privateDnsZoneId string
 @description('Specifies the client IP address to whitelist in the database server\'s firewall.')
 param clientIP string
 
-@description('Specifies whether to create the database specified by \'database\'.')
+@description('Specifies whether to create the database specified by \'database\'. This should only be set if Azure AD is not used.')
 param deployDatabase bool = (database != '')
 
 var deployAsPublic = (clientIP != '')
@@ -95,16 +95,15 @@ resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2
   parent: postgresServer
 }
 
-// Currently disabled - deploymment fails with if the AAD admin is specified like this.
-// resource postgresAzureADAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2022-12-01' = {
-//   name: aadPostgresAdminObjectID
-//   parent: postgresServer
-//   properties: {
-//     principalName: aadPostgresAdmin
-//     principalType: 'User'
-//     tenantId: subscription().tenantId
-//   }
-// }
+resource postgresAzureADAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2022-12-01' = {
+  name: aadPostgresAdminObjectID
+  parent: postgresServer
+  properties: {
+    principalName: aadPostgresAdmin
+    principalType: 'User'
+    tenantId: subscription().tenantId
+  }
+}
 
 @batchSize(1)
 resource firewallRules 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = [for rule in firewallrules: if (deployAsPublic)  {

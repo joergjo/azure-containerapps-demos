@@ -67,14 +67,6 @@ db_host=$(az deployment group show \
   --query properties.outputs.postgresHost.value \
   --output tsv)
 
-az deployment group create \
-  --resource-group "$resource_group" \
-  --name "aad-admin-$timestamp" \
-  --template-file modules/dbadmin.bicep \
-  --parameters server="$db_server" \
-    aadPostgresAdmin="$current_user_upn" aadPostgresAdminObjectID="$current_user_objectid" \
-  --output none
-
 if [ $? -ne 0 ]; then
   echo "Bicep deployment failed. Please check the error message above."
   exit 1
@@ -85,6 +77,7 @@ export PGPASSWORD=$token
 
 cat << EOF > prepare-db.generated.sql
 SELECT * FROM pgaadauth_create_principal('${identity_upn}', false, false);
+CREATE DATABASE "${database}";
 EOF
 
 psql "host=${db_host} user=${current_user_upn} dbname=postgres sslmode=require" \

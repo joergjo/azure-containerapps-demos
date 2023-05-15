@@ -47,7 +47,7 @@ module postgres 'modules/database.bicep' = {
     clientIP: clientIP
     postgresSubnetId: network.outputs.databaseSubnetId
     privateDnsZoneId: network.outputs.privateDnsZoneId
-    // deployDatabase: false
+    deployDatabase: false
   }
 }
 

@@ -10,15 +10,14 @@ This application is based on a [sample To Do API from Azure's Spring Boot docs](
 
 ## Motivation
 
-At the time of writing, the official Azure documentation for passwordless connections covers the use of Azure Database for PostgreSQL *Single Server*. Setting up Azure AD support for Flexible Server works differently and is currently not detailed in the documentation for an end-to-end scenario. 
-
-This sample also demonstrates how to use a User-assigned Managed Identity, 
+This sample demonstrates the use of a User-assigned Managed Identity, 
 because it solves the otherwise inevitable chickend-and-egg problem&mdash;
 the application cannot be deployed unless the database model exists, 
 but authorizing the application to access the database requires the application
 to exist if a System-assigend Managed identity is used...
 
-There are other "passwordless" samples available in the [Azure Samples repo](https://github.com/Azure-Samples/Passwordless-Connections-for-Java-Apps) that also make use of Flexible Server. 
+There are other "passwordless" samples available in the [Azure Samples repo](https://github.com/Azure-Samples/Passwordless-Connections-for-Java-Apps) 
+that also make use of Flexible Server. 
 
 
 ## Prerequisites
@@ -74,22 +73,18 @@ Next, execute `deploy.sh`:
 ./deploy.sh
 ```
 
-The script sets the Azure AD user that is currently logged in to Azure CLI as database owner. 
-This allows you to run the application locally without any modifications, since the Azure AD plugin in PostgreSQL will
-[probe for a way to log in to Azure if no managed identity is available](https://learn.microsoft.com/en-us/java/api/overview/azure/identity-readme?view=azure-java-stable#authenticate-a-user-assigned-managed-identity-with-defaultazurecredential).    
-
 ## Deployment Options
 
 You can control additional deployment details (e.g., the Azure region to deploy to) by exporting the following environment variables:
 
-| Environment variable              | Purpose                               | Default value                   |
-| --------------------------------- | ------------------------------------- | ------------------------------- |
-| `CONTAINERAPP_LOCATION`           | Azure region to deploy to             | `westeurope`                    |
-| `CONTAINERAPP_NAME`               | Name of the Azure Container App       | `todoapi`                       |
+| Environment variable              | Purpose                               | Default value                                                          |
+| --------------------------------- | ------------------------------------- | ---------------------------------------------------------------------- |
+| `CONTAINERAPP_LOCATION`           | Azure region to deploy to             | `westeurope`                                                           |
+| `CONTAINERAPP_NAME`               | Name of the Azure Container App       | `todoapi`                                                              |
 | `CONTAINERAPP_IMAGE`              | Application container image           | `joergjo/java-boot-todo:latest` or `joergjo/java-boot-todo:dd-latest`  |
-| `CONTAINERAPP_POSTGRES_DB`        | Database name used by the application | `demo`                         |
-| `CONTAINERAPP_DD_SITE`            | Datadog site                          | `datadoghq.com`                 |
-| `CONTAINERAPP_DD_ENV`             | Datadog `env` tag                     | `dev`                           |
+| `CONTAINERAPP_POSTGRES_DB`        | Database name used by the application | `demo`                                                                 |
+| `CONTAINERAPP_DD_SITE`            | Datadog site                          | `datadoghq.com`                                                        |
+| `CONTAINERAPP_DD_ENV`             | Datadog `env` tag                     | `dev`                                                                  |
 
 
 ## Deployed Resources
@@ -122,10 +117,10 @@ Prebuilt images with and without Datadog support are available on [Docker Hub](h
 If you want to build your own container image, use the included Docker Compose files:
 
 ```bash
-$ cd <path-to-project-directory>
-$ docker compose build
-$ docker tag java-boot-todo <your-registry>/java-boot-todo:<your-tag>
-$ docker push <your-registry>/java-boot-todo:<your-tag>
+cd <path-to-project-directory>
+docker compose build
+docker tag java-boot-todo <your-registry>/java-boot-todo:<your-tag>
+docker push <your-registry>/java-boot-todo:<your-tag>
 ```
 
 > If you are using an older version of Docker, you may have to use `docker-compose build` (note the dash).
