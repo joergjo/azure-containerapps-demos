@@ -29,7 +29,7 @@ func main() {
 
 func newLogger(w io.Writer, debug bool) *slog.JSONHandler {
 	opts := slog.HandlerOptions{
-		ReplaceAttr: func(a slog.Attr) slog.Attr {
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 			if a.Key == slog.TimeKey {
 				return slog.Time(a.Key, a.Value.Time().UTC())
 			}
@@ -37,9 +37,9 @@ func newLogger(w io.Writer, debug bool) *slog.JSONHandler {
 		},
 	}
 	if debug {
-		opts.Level = slog.DebugLevel
+		opts.Level = slog.LevelDebug
 	}
-	return opts.NewJSONHandler(w)
+	return slog.NewJSONHandler(w, &opts)
 }
 
 func run(listenAddr string, connString string, debug bool) {
@@ -58,7 +58,6 @@ func run(listenAddr string, connString string, debug bool) {
 		slog.Error("Failed to initialize data store", err)
 		os.Exit(1)
 	}
-	defer store.close(context.Background())
 
 	r := newRouter(store)
 	s := http.Server{
@@ -77,6 +76,11 @@ func run(listenAddr string, connString string, debug bool) {
 	slog.Info("Waiting for shutdown to complete")
 	<-done
 	slog.Error("Server has shut down", err)
+	slog.Info("Disconnecting from database")
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	store.close(ctx)
+	slog.Info("Shutdown complete")
 }
 
 func shutdown(ctx context.Context, s *http.Server, done chan struct{}) {

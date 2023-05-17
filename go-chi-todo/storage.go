@@ -26,8 +26,7 @@ type postgresStore struct {
 }
 
 func newPostgresStore(ctx context.Context, connString string) (*postgresStore, error) {
-	store := postgresStore{}
-
+	var store postgresStore
 	config, err := pgxpool.ParseConfig(connString)
 	if err != nil {
 		return nil, err
@@ -48,43 +47,36 @@ func newPostgresStore(ctx context.Context, connString string) (*postgresStore, e
 	return &store, nil
 }
 
-func (t *postgresStore) getToken() string {
-	t.mutex.RLock()
-	defer t.mutex.RUnlock()
-	return t.accessToken.Token
+func (p *postgresStore) getAndCheckToken() (string, bool) {
+	p.mutex.RLock()
+	defer p.mutex.RUnlock()
+	return p.accessToken.Token, p.accessToken.ExpiresOn.After(time.Now().UTC())
 }
 
-func (t *postgresStore) acquireToken(ctx context.Context) error {
+func (t *postgresStore) acquireToken(ctx context.Context) (string, error) {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		slog.Error("Error acquiring identity", err)
-		return err
+		return "", err
 	}
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 	at, err := cred.GetToken(ctx, defaultOpts)
 	if err != nil {
 		slog.Error("Error acquiring token", err)
-		return err
+		return "", err
 	}
 	t.accessToken = at
-	return nil
+	return at.Token, nil
 }
 
-func (t *postgresStore) tokenValid() bool {
-	t.mutex.RLock()
-	defer t.mutex.RUnlock()
-	return t.accessToken.ExpiresOn.After(time.Now().UTC())
-}
-
-func (t *postgresStore) beforeAcquire(ctx context.Context, conn *pgx.Conn) bool {
+func (p *postgresStore) beforeAcquire(ctx context.Context, conn *pgx.Conn) bool {
 	slog.Debug("BeforeAcquire: Checking access token")
-	token := t.getToken()
+	token, ok := p.getAndCheckToken()
 	if token == "" {
 		slog.Debug("BeforeAcquire: No access token set")
 		return true
 	}
-	ok := t.tokenValid()
 	slog.Debug(fmt.Sprintf("BeforeAcquire: Access token still valid: %v", ok))
 	return ok
 }
@@ -95,13 +87,15 @@ func (t *postgresStore) beforeConnect(ctx context.Context, config *pgx.ConnConfi
 		return nil
 	}
 	slog.Debug("BeforeConnect: No password set, checking access token")
-	if !t.tokenValid() {
+	token, ok := t.getAndCheckToken()
+	if !ok {
 		slog.Debug("BeforeConnect: Acquiring access token")
-		if err := t.acquireToken(ctx); err != nil {
+		var err error
+		if token, err = t.acquireToken(ctx); err != nil {
 			return err
 		}
 	}
-	config.Password = t.getToken()
+	config.Password = token
 	slog.Info(fmt.Sprintf("Acquired new access token: %s...", config.Password[:10]))
 	return nil
 }
