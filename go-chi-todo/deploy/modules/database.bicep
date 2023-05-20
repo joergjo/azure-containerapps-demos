@@ -1,8 +1,8 @@
 @description('Specifies the name of the Azure Database for PostgreSQL flexible server.')
-param server string
+param server string = 'server-${uniqueString(resourceGroup().id)}'
 
 @description('Specifies the name of PostgreSQL database used by the application.')
-param database string
+param database string = ''
 
 @description('Specifies the location to deploy to.')
 param location string 
@@ -23,6 +23,12 @@ param postgresLogin string
 @secure()
 param postgresLoginPassword string
 
+@description('Specifies the Azure AD PostgreSQL administrator user principal name.')
+param aadPostgresAdmin string
+
+@description('Specifies the Azure AD PostgreSQL administrator user\'s object ID.')
+param aadPostgresAdminObjectID string
+
 @description('Specifies the subnet resource ID of the delegated subnet for Azure Database.')
 param postgresSubnetId string
 
@@ -32,8 +38,8 @@ param privateDnsZoneId string
 @description('Specifies the client IP address to whitelist in the database server\'s firewall.')
 param clientIP string
 
-@description('Specifies whether to create the database specified by \'database\'.')
-param deployDatabase bool = true
+@description('Specifies whether to create the database specified by \'database\'. This should only be set if Azure AD is not used.')
+param deployDatabase bool = (database != '')
 
 var deployAsPublic = (clientIP != '')
 
@@ -50,7 +56,7 @@ var firewallrules = [
   }
 ]
 
-resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-01-20-preview' = {
+resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01' = {
   name: server
   location: location
   sku: {
@@ -60,6 +66,11 @@ resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-01-20-pr
   properties: {
     administratorLogin: postgresLogin
     administratorLoginPassword: postgresLoginPassword
+    authConfig: {
+      activeDirectoryAuth: 'Enabled'
+      passwordAuth: 'Enabled'
+      tenantId: subscription().tenantId
+    }
     storage: {
       storageSizeGB: 32
     }
@@ -79,14 +90,25 @@ resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-01-20-pr
   }
 }
 
-resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2021-06-01' = if (deployDatabase) {
+resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-12-01' = if (deployDatabase) {
   name: database
   parent: postgresServer
 }
 
+resource postgresAzureADAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2022-12-01' = {
+  name: aadPostgresAdminObjectID
+  parent: postgresServer
+  properties: {
+    principalName: aadPostgresAdmin
+    principalType: 'User'
+    tenantId: subscription().tenantId
+  }
+}
+
 @batchSize(1)
-resource firewallRules 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2021-06-01' = [for rule in firewallrules: if (deployAsPublic)  {
-  name: '${postgresServer.name}/${rule.name}'
+resource firewallRules 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = [for rule in firewallrules: if (deployAsPublic)  {
+  name: rule.name
+  parent: postgresServer
   properties: {
     startIpAddress: rule.startIpAddress
     endIpAddress: rule.endIpAddress

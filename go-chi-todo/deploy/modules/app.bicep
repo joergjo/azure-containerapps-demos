@@ -13,18 +13,57 @@ param image string
 @description('Specifies the container app\'s user assigned managed identity\'s UPN.')
 param identityUPN string
 
+@description('Specifies the Azure Database for PostgreSQL server\'s FQDN.')
+param postgresHost string
+
 @description('Specifies the database name to use.')
 param database string
-
-@description('Specifies the secrets used by the application.')
-@secure()
-param secrets object
 
 resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-31-preview' existing = {
   name: identityUPN
 }
 
-resource containerApp 'Microsoft.App/containerApps@2022-03-01' = {
+var allSecrets = [
+  {
+    name: 'postgres-user'
+    value: identityUPN
+  }
+  {
+    name: 'azure-client-id'
+    value: appIdentity.properties.clientId
+  }
+]
+
+var secrets = filter(allSecrets, s => !empty(s.value))
+
+var allEnvVars = [
+  {
+    name: 'PGHOST'
+    value: postgresHost
+  }
+  {
+    name: 'PGUSER'
+    secretRef: 'postgres-user'
+  }
+  {
+    name: 'PGDATABASE'
+    value: database
+  }
+  {
+    name: 'PGSSLMODE'
+    value: 'require'
+  }
+  {
+    name: 'AZURE_CLIENT_ID'
+    secretRef: 'azure-client-id'
+  }
+]
+
+var secretNames = map(secrets, s => s.name)
+var envVars = filter(allEnvVars, e => (contains(e, 'secretRef') && contains(secretNames, e.secretRef)) || contains(e, 'value'))
+var port = 8080
+
+resource containerApp 'Microsoft.App/containerApps@2022-10-01' = {
   name: name
   location: location
   identity: {
@@ -38,75 +77,38 @@ resource containerApp 'Microsoft.App/containerApps@2022-03-01' = {
     configuration: {
       ingress: {
         external: true
-        targetPort: 8080
+        targetPort: port
       }
       dapr: {
         enabled: false
       }
-      secrets: [
-        {
-          name: 'postgres-host'
-          value: secrets.postgres.host
-        }
-        {
-          name: 'postgres-user'
-          value: secrets.postgres.user
-        }
-      ]
+      secrets: secrets
     }
     template: {
       containers: [
         {
           image: image
           name: name
-          env: [
-            {
-              name: 'POSTGRESQL_FQDN'
-              secretRef: 'postgres-host'
-            }
-            {
-              name: 'POSTGRESQL_USERNAME'
-              secretRef: 'postgres-user'
-            }
-            {
-              name: 'POSTGRES_DB'
-              value: database
-            }
-            {
-              name: 'SPRING_PROFILES_ACTIVE'
-              value: 'json-logging'
-            }
-            {
-              name: 'AZURE_CLIENT_ID'
-              value: appIdentity.properties.clientId
-            }
-          ]
+          env: envVars
           resources: {
             cpu: json('1.0')
-            memory: '2Gi'
+            memory: '2.0Gi'
           }
           probes: [
             {
-              type: 'startup'
-              httpGet: {
-                path: '/actuator/health/liveness'
-                port: 4004
-              }
-              failureThreshold: 10
-              periodSeconds: 15
-            }
-            {
               type: 'liveness'
               httpGet: {
-                path: '/actuator/health/liveness'
-                port: 4004
+                scheme: 'HTTP'
+                path: '/healthz'
+                port: port
               }
             }
             {
               type: 'readiness'
               httpGet: {
-                path: '/actuator/health/readiness'
-                port: 4004
+                scheme: 'HTTP'
+                path: '/ready'
+                port: port
               }
               initialDelaySeconds: 15
             }
