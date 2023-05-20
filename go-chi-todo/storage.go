@@ -53,20 +53,18 @@ func (p *postgresStore) getAndCheckToken() (string, bool) {
 	return p.accessToken.Token, p.accessToken.ExpiresOn.After(time.Now().UTC())
 }
 
-func (t *postgresStore) acquireToken(ctx context.Context) (string, error) {
+func (p *postgresStore) acquireToken(ctx context.Context) (string, error) {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
-		slog.Error("Error acquiring identity", err)
 		return "", err
 	}
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
 	at, err := cred.GetToken(ctx, defaultOpts)
 	if err != nil {
-		slog.Error("Error acquiring token", err)
 		return "", err
 	}
-	t.accessToken = at
+	p.accessToken = at
 	return at.Token, nil
 }
 
@@ -81,17 +79,17 @@ func (p *postgresStore) beforeAcquire(ctx context.Context, conn *pgx.Conn) bool 
 	return ok
 }
 
-func (t *postgresStore) beforeConnect(ctx context.Context, config *pgx.ConnConfig) error {
+func (p *postgresStore) beforeConnect(ctx context.Context, config *pgx.ConnConfig) error {
 	if config.Password != "" {
 		slog.Debug("BeforeConnect: Password is set")
 		return nil
 	}
 	slog.Debug("BeforeConnect: No password set, checking access token")
-	token, ok := t.getAndCheckToken()
+	token, ok := p.getAndCheckToken()
 	if !ok {
 		slog.Debug("BeforeConnect: Acquiring access token")
 		var err error
-		if token, err = t.acquireToken(ctx); err != nil {
+		if token, err = p.acquireToken(ctx); err != nil {
 			return err
 		}
 	}
@@ -100,8 +98,8 @@ func (t *postgresStore) beforeConnect(ctx context.Context, config *pgx.ConnConfi
 	return nil
 }
 
-func (t *postgresStore) list(ctx context.Context, offset int, limit int) ([]todo, error) {
-	rows, err := t.pool.Query(
+func (p *postgresStore) list(ctx context.Context, offset int, limit int) ([]todo, error) {
+	rows, err := p.pool.Query(
 		ctx,
 		`SELECT id, description, details, done FROM todo ORDER BY description OFFSET $1 LIMIT $2`,
 		int64(offset),
@@ -113,8 +111,8 @@ func (t *postgresStore) list(ctx context.Context, offset int, limit int) ([]todo
 	return pgx.CollectRows(rows, pgx.RowToStructByPos[todo])
 }
 
-func (t *postgresStore) find(ctx context.Context, id int) (todo, error) {
-	rows, err := t.pool.Query(
+func (p *postgresStore) find(ctx context.Context, id int) (todo, error) {
+	rows, err := p.pool.Query(
 		ctx,
 		`SELECT id, description, details, done FROM todo WHERE id = $1`,
 		int64(id))
@@ -133,10 +131,10 @@ func (t *postgresStore) find(ctx context.Context, id int) (todo, error) {
 	return item, nil
 }
 
-func (t *postgresStore) create(ctx context.Context, item todo) (todo, error) {
+func (p *postgresStore) create(ctx context.Context, item todo) (todo, error) {
 	var id int64
 	// We're using QueryRow() instead of Exec() since this allows us to capture the value of the RETURNING clause
-	row := t.pool.QueryRow(
+	row := p.pool.QueryRow(
 		ctx,
 		`INSERT INTO todo (id, description, details, done) VALUES (DEFAULT, $1, $2, $3) RETURNING id`,
 		item.Description, item.Details, item.Done)
@@ -148,8 +146,8 @@ func (t *postgresStore) create(ctx context.Context, item todo) (todo, error) {
 	return item, nil
 }
 
-func (t *postgresStore) update(ctx context.Context, item todo) (todo, error) {
-	tag, err := t.pool.Exec(
+func (p *postgresStore) update(ctx context.Context, item todo) (todo, error) {
+	tag, err := p.pool.Exec(
 		ctx,
 		`UPDATE todo SET description = $1, details = $2, done =$3 where id =$4`,
 		item.Description,
@@ -165,8 +163,8 @@ func (t *postgresStore) update(ctx context.Context, item todo) (todo, error) {
 	return item, nil
 }
 
-func (t *postgresStore) delete(ctx context.Context, id int) error {
-	tag, err := t.pool.Exec(
+func (p *postgresStore) delete(ctx context.Context, id int) error {
+	tag, err := p.pool.Exec(
 		ctx,
 		`DELETE FROM todo where id = $1`,
 		id)
@@ -179,6 +177,10 @@ func (t *postgresStore) delete(ctx context.Context, id int) error {
 	return nil
 }
 
-func (t *postgresStore) close(ctx context.Context) {
-	t.pool.Close()
+func (p *postgresStore) ping(ctx context.Context) error {
+	return p.pool.Ping(ctx)
+}
+
+func (p *postgresStore) close(ctx context.Context) {
+	p.pool.Close()
 }

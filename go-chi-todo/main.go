@@ -55,7 +55,7 @@ func run(listenAddr string, connString string, debug bool) {
 
 	store, err := newPostgresStore(context.Background(), connString)
 	if err != nil {
-		slog.Error("Failed to initialize data store", err)
+		slog.Error("Failed to initialize data store", ErrorKey, err)
 		os.Exit(1)
 	}
 
@@ -75,7 +75,7 @@ func run(listenAddr string, connString string, debug bool) {
 	err = s.ListenAndServe()
 	slog.Info("Waiting for shutdown to complete")
 	<-done
-	slog.Error("Server has shut down", err)
+	slog.Error("Server has shut down", ErrorKey, err)
 	slog.Info("Disconnecting from database")
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
@@ -93,7 +93,7 @@ func shutdown(ctx context.Context, s *http.Server, done chan struct{}) {
 	defer cancel()
 
 	if err := s.Shutdown(childCtx); err != nil {
-		slog.Error("Error during shutdown", err)
+		slog.Error("Error during shutdown", ErrorKey, err)
 	}
 	done <- struct{}{}
 }

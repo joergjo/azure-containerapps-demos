@@ -24,15 +24,16 @@ func newRouter(ts todoStore) *chi.Mux {
 		middleware.GetHead,
 		middleware.Heartbeat("/healthz"),
 		middleware.AllowContentType("application/json"))
-	r.Get("/todo", newGetManyHandler(ts))
-	r.Post("/todo", newPostHandler(ts))
-	r.Get("/todo/{id:[0-9]+}", newGetHandler(ts))
-	r.Put("/todo/{id:[0-9]+}", newPutHandler(ts))
-	r.Delete("/todo/{id:[0-9]+}", newDeleteHandler(ts))
+	r.Get("/ready", readyHandler(ts))
+	r.Get("/todo", getManyHandler(ts))
+	r.Post("/todo", postHandler(ts))
+	r.Get("/todo/{id:[0-9]+}", getHandler(ts))
+	r.Put("/todo/{id:[0-9]+}", putHandler(ts))
+	r.Delete("/todo/{id:[0-9]+}", deleteHandler(ts))
 	return r
 }
 
-func newGetManyHandler(ts todoStore) http.HandlerFunc {
+func getManyHandler(ts todoStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Query().Get("offset")
 		offset, err := strconv.Atoi(p)
@@ -46,7 +47,7 @@ func newGetManyHandler(ts todoStore) http.HandlerFunc {
 		}
 		items, err := ts.list(r.Context(), offset, limit)
 		if err != nil {
-			slog.Error("Error reading from store", err)
+			slog.Error("Error reading from store", ErrorKey, err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
@@ -54,14 +55,14 @@ func newGetManyHandler(ts todoStore) http.HandlerFunc {
 	}
 }
 
-func newGetHandler(ts todoStore) http.HandlerFunc {
+func getHandler(ts todoStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		p := chi.URLParam(r, "id")
 		id, _ := strconv.Atoi(p)
 		item, err := ts.find(r.Context(), id)
 		if err != nil {
 			if !errors.Is(err, errEmptyResultSet) {
-				slog.Error("Error reading from store", err)
+				slog.Error("Error reading from store", ErrorKey, err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
@@ -73,18 +74,18 @@ func newGetHandler(ts todoStore) http.HandlerFunc {
 	}
 }
 
-func newPostHandler(ts todoStore) http.HandlerFunc {
+func postHandler(ts todoStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var item todo
 		if err := bind(r, &item); err != nil {
-			slog.Error("Error binding request body", err)
+			slog.Error("Error binding request body", ErrorKey, err)
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 
 		}
 		item, err := ts.create(r.Context(), item)
 		if err != nil {
-			slog.Error("Error creating new todo item to store", err)
+			slog.Error("Error creating new todo item to store", ErrorKey, err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
@@ -93,11 +94,11 @@ func newPostHandler(ts todoStore) http.HandlerFunc {
 	}
 }
 
-func newPutHandler(ts todoStore) http.HandlerFunc {
+func putHandler(ts todoStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var item todo
 		if err := bind(r, &item); err != nil {
-			slog.Error("Error binding request body", err)
+			slog.Error("Error binding request body", ErrorKey, err)
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 
@@ -108,7 +109,7 @@ func newPutHandler(ts todoStore) http.HandlerFunc {
 		item, err := ts.update(r.Context(), item)
 		if err != nil {
 			if !errors.Is(err, errEmptyResultSet) {
-				slog.Error("Error updating todo item in store", err)
+				slog.Error("Error updating todo item in store", ErrorKey, err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
@@ -120,14 +121,14 @@ func newPutHandler(ts todoStore) http.HandlerFunc {
 	}
 }
 
-func newDeleteHandler(ts todoStore) http.HandlerFunc {
+func deleteHandler(ts todoStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		p := chi.URLParam(r, "id")
 		id, _ := strconv.Atoi(p)
 		err := ts.delete(r.Context(), id)
 		if err != nil {
 			if !errors.Is(err, errEmptyResultSet) {
-				slog.Error("Error deleting from store", err)
+				slog.Error("Error deleting from store", ErrorKey, err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
@@ -136,6 +137,17 @@ func newDeleteHandler(ts todoStore) http.HandlerFunc {
 			return
 		}
 		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func readyHandler(ts todoStore) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := ts.ping(r.Context()); err != nil {
+			slog.Error("Error checking readiness", ErrorKey, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -148,7 +160,7 @@ func bind(r *http.Request, v any) error {
 func respond(w http.ResponseWriter, v any, headers ...header) {
 	b, err := json.Marshal(v)
 	if err != nil {
-		slog.Error("Error encoding object", err)
+		slog.Error("Error encoding object", ErrorKey, err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}

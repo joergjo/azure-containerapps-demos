@@ -20,4 +20,5 @@ type todoStore interface {
 	create(ctx context.Context, item todo) (todo, error)
 	update(ctx context.Context, item todo) (todo, error)
 	delete(ctx context.Context, id int) error
+	ping(ctx context.Context) error
 }
