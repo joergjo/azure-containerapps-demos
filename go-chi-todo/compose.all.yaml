@@ -1,0 +1,32 @@
+version: "3.9"
+
+volumes:
+  todo-data:
+
+services:
+  todo-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${IMAGE:-joergjo/go-chi-todo}
+    ports:
+      - "8080:8080"
+    environment:
+      - PGHOST=todo-db
+      - PGPORT=5432
+      - PGUSER=postgres
+      - PGPASSWORD=pass@word1
+      - PGDATABASE=todo
+      - TODO_DEBUG=${TODO_DEBUG:-true}
+    depends_on:
+      - todo-db
+
+  todo-db:
+    image: postgres:${POSTGRES_TAG:-14-alpine}
+    ports:
+      - "5432:5432"
+    volumes:
+      - todo-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=pass@word1
+      - POSTGRES_DB=todo

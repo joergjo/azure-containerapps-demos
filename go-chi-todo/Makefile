@@ -14,3 +14,12 @@ migrate-down:
 	
 migrate-force:
 	migrate -path $(PWD)/migrations -database "pgx://${PGUSER}:$(TOKEN)@${PGHOST}:${PGPORT}/${PGDATABASE}?sslmode=${PGSSLMODE}" force $(VERSION)
+
+migrate-docker-up:
+	migrate -path $(PWD)/migrations -database "pgx://postgres:pass%40word1@localhost/todo?sslmode=allow" up $(N)
+
+migrate-docker-down:
+	migrate -path $(PWD)/migrations -database "pgx://postgres:pass%40word1@localhost/todo?sslmode=allow" down $(N)
+	
+migrate-docker-force:
+	migrate -path $(PWD)/migrations -database "pgx://postgres:pass%40word1@localhost/todo?sslmode=allow" force $(N)
