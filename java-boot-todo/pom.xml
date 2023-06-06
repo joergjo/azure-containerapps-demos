@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.0.6</version>
+		<version>3.0.7</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example</groupId>
@@ -17,7 +17,7 @@
 		<revision>1.0.0</revision>
 		<java.version>17</java.version>
 		<logback-contrib.version>0.1.5</logback-contrib.version>
-		<spring-cloud-azure.version>5.1.0</spring-cloud-azure.version>
+		<spring-cloud-azure.version>5.2.0</spring-cloud-azure.version>
 	</properties>
 
 	<dependencies>
