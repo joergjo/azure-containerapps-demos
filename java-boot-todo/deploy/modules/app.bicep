@@ -33,7 +33,7 @@ param ddSite string
 @description('Specifies the Datadog environment tag.')
 param ddEnv string
 
-resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-31-preview' existing = {
+resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
   name: identityUPN
 }
 
