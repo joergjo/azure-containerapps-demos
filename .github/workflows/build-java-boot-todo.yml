@@ -57,12 +57,12 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Build and push with Datadog support
+      - name: Build and push with Datadog support (AMD64 only)
         uses: docker/build-push-action@v3
         with:
           context: ./java-boot-todo
           file: ./java-boot-todo/Dockerfile.dd.buildkit
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: true
           tags: ${{ steps.meta-dd.outputs.tags }}
           labels: ${{ steps.meta-dd.outputs.labels }}
