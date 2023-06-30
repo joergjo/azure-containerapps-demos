@@ -21,7 +21,7 @@ RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -DskipTests -Drevision=${revis
 FROM base AS final
 WORKDIR /app
 COPY --from=build /build/target/java-boot-todo-*.jar java-boot-todo.jar
-COPY --from=datadog/serverless-init:beta9rc2 /datadog-init datadog-init
+COPY --from=datadog/serverless-init:beta9 /datadog-init datadog-init
 RUN curl -s -L -o dd-java-agent.jar https://dtdg.co/latest-java-tracer
 
 ENTRYPOINT ["/app/datadog-init"]
