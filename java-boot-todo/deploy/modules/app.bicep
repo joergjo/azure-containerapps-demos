@@ -100,7 +100,7 @@ var allEnvVars = [
 var secretNames = map(secrets, s => s.name)
 var envVars = filter(allEnvVars, e => (contains(e, 'secretRef') && contains(secretNames, e.secretRef)) || contains(e, 'value'))
 
-resource containerApp 'Microsoft.App/containerApps@2022-10-01' = {
+resource containerApp 'Microsoft.App/containerApps@2023-04-01-preview' = {
   name: name
   location: location
   identity: {
@@ -177,6 +177,7 @@ resource containerApp 'Microsoft.App/containerApps@2022-10-01' = {
         ]
       }
     }
+    workloadProfileName: 'Consumption'
   }
 }
 
