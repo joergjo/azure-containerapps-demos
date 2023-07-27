@@ -15,7 +15,7 @@ param envVars array
 
 var port = 8000
 
-resource containerApp 'Microsoft.App/containerApps@2022-03-01' = {
+resource containerApp 'Microsoft.App/containerApps@2023-04-01-preview' = {
   name: name
   location: location
   properties: {
@@ -72,6 +72,7 @@ resource containerApp 'Microsoft.App/containerApps@2022-03-01' = {
         ]
       }
     }
+    workloadProfileName: 'Consumption'
   }
 }
 

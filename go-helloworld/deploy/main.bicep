@@ -21,7 +21,7 @@ module network 'modules/network.bicep' = {
   name: 'network'
   params: {
     location: location
-    vnetName: '${appName}-vnet'
+    namePrefix: appName
   }
 }
 
