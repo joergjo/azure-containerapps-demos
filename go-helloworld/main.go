@@ -96,9 +96,9 @@ func hello(l log.FieldLogger) http.HandlerFunc {
 	}
 }
 
-func about(l log.FieldLogger, isOn bool) http.HandlerFunc {
+func about(l log.FieldLogger, enabled bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if isOn {
+		if enabled {
 			msg := fmt.Sprintf("Built with %s", runtime.Version())
 			l.Printf("Sending %q", msg)
 			w.Header().Set("Content-Type", "text/plain")
