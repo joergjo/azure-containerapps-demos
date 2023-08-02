@@ -458,3 +458,7 @@ $RECYCLE.BIN/
 
 # ARM
 azuredeploy.parameters.json
+.azure
+
+# Direnv
+.envrc

@@ -1,5 +1,5 @@
-@description('Specifies the name of the Azure Storage account.')
-param storageAccountName string
+@description('Specifies the name prefix of all resources.')
+param namePrefix string
 
 @description('Specifies the location to deploy to.')
 param location string
@@ -10,16 +10,19 @@ param queueName string
 @description('Specifies the subnet resource ID for the Container App environment.')
 param infrastructureSubnetId string
 
-@description('Specifies the subnet resource ID for the Container App pods.')
-param runtimeSubnetId string
+@description('Specifies the tags for all resources.')
+param tags object = {}
 
 @description('Specifies public IP address used by the executing client.')
 @secure()
 param clientPublicIpAddress string
 
-resource storageAccount 'Microsoft.Storage/storageAccounts@2021-08-01' = {
+var storageAccountName = '${length(namePrefix) <=11 ? namePrefix : substring(namePrefix, 0, 11)}${uniqueString(resourceGroup().id)}'
+
+resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   name: storageAccountName
   location: location
+  tags: tags
   sku: {
     name: 'Standard_LRS'
   }
@@ -34,21 +37,26 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2021-08-01' = {
           id: infrastructureSubnetId
           action: 'Allow'
         }
-        {
-          id: runtimeSubnetId
-          action: 'Allow'
-        }
       ]
-      ipRules: [
+      ipRules: !empty(clientPublicIpAddress) ? [
         {
           action: 'Allow'
           value: clientPublicIpAddress
         }
-      ]
+      ] : null  
     }
   }
 }
 
-resource workerQueue 'Microsoft.Storage/storageAccounts/queueServices/queues@2021-08-01' = {
-  name: '${storageAccount.name}/default/${queueName}'
+resource queueService 'Microsoft.Storage/storageAccounts/queueServices@2022-09-01' = {
+  name: 'default'
+  parent: storageAccount
 }
+
+resource workerQueue 'Microsoft.Storage/storageAccounts/queueServices/queues@2022-09-01' = {
+  name: queueName
+  parent: queueService
+}
+
+output storageAccountName string = storageAccount.name
+output queueName string = workerQueue.name

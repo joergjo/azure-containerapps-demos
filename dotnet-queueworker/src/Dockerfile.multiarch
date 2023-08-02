@@ -1,4 +1,4 @@
-﻿FROM mcr.microsoft.com/dotnet/runtime:6.0 AS base
+﻿FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
 WORKDIR /app
 
 # Creates a non-root user with an explicit UID and adds permission to access the /app folder
@@ -6,17 +6,15 @@ WORKDIR /app
 RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /app
 USER appuser
 
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+ARG TARGETARCH
 WORKDIR /src
 COPY ["./QueueWorker.csproj", "."]
-RUN dotnet restore "QueueWorker.csproj"
+RUN dotnet restore -a $TARGETARCH
 COPY [".",  "."]
-RUN dotnet build "QueueWorker.csproj" -c Release -o /app/build
-
-FROM build AS publish
-RUN dotnet publish "QueueWorker.csproj" -c Release -o /app/publish
+RUN dotnet publish -a $TARGETARCH --self-contained false --no-restore -o /app
 
 FROM base AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=build /app .
 ENTRYPOINT ["dotnet", "QueueWorker.dll"]

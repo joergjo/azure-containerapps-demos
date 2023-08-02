@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/QueueWorker.csproj",
+                "${workspaceFolder}/src/QueueWorker.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -23,7 +23,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/QueueWorker.csproj",
+                "${workspaceFolder}/src/QueueWorker.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -36,7 +36,7 @@
             "args": [
                 "watch",
                 "run",
-                "${workspaceFolder}/QueueWorker.csproj",
+                "${workspaceFolder}/src/QueueWorker.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -51,12 +51,12 @@
             "dockerBuild": {
                 "tag": "dotnetqueueworker:dev",
                 "target": "base",
-                "dockerfile": "${workspaceFolder}/Dockerfile",
-                "context": "${workspaceFolder}",
+                "dockerfile": "${workspaceFolder}/src/Dockerfile",
+                "context": "${workspaceFolder}/src",
                 "pull": true
             },
             "netCore": {
-                "appProject": "${workspaceFolder}/QueueWorker.csproj"
+                "appProject": "${workspaceFolder}/src/QueueWorker.csproj"
             }
         },
         {
@@ -67,12 +67,12 @@
             ],
             "dockerBuild": {
                 "tag": "dotnetqueueworker:latest",
-                "dockerfile": "${workspaceFolder}/Dockerfile",
-                "context": "${workspaceFolder}",
+                "dockerfile": "${workspaceFolder}/src/Dockerfile",
+                "context": "${workspaceFolder}/src",
                 "pull": true
             },
             "netCore": {
-                "appProject": "${workspaceFolder}/QueueWorker.csproj"
+                "appProject": "${workspaceFolder}/src/QueueWorker.csproj"
             }
         },
         {
@@ -83,7 +83,7 @@
             ],
             "dockerRun": {},
             "netCore": {
-                "appProject": "${workspaceFolder}/QueueWorker.csproj",
+                "appProject": "${workspaceFolder}/src/QueueWorker.csproj",
                 "enableDebugging": true
             }
         },
@@ -95,7 +95,7 @@
             ],
             "dockerRun": {},
             "netCore": {
-                "appProject": "${workspaceFolder}/QueueWorker.csproj"
+                "appProject": "${workspaceFolder}/src/QueueWorker.csproj"
             }
         }
     ]
