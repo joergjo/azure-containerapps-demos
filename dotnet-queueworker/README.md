@@ -1,4 +1,3 @@
-cat README.md
 # Azure Container Apps sample: .NET Azure Storage Queue worker service
 
 
