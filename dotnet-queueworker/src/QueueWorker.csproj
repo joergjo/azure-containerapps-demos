@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-QueueWorker-F6B152E2-1BA8-447F-AFE6-08A2633CE01E</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <RollForward>Major</RollForward>
   </PropertyGroup>
 
   <ItemGroup>
