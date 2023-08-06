@@ -95,6 +95,14 @@ var allEnvVars = [
     name: 'DD_SITE'
     value: ddSite
   }
+  {
+    name: 'DD_AZURE_SUBSCRIPTION_ID'
+    value: subscription().subscriptionId
+  }
+  {
+    name: 'DD_AZURE_RESOURCE_GROUP'
+    value: resourceGroup().name
+  }
 ]
 
 var secretNames = map(secrets, s => s.name)

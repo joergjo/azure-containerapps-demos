@@ -1,4 +1,5 @@
 ARG revision=1.0.0
+
 FROM eclipse-temurin:17-jre-jammy AS base
 EXPOSE 8080
 ARG revision
@@ -11,7 +12,6 @@ ENV DD_TRACE_ENABLED=true
 FROM eclipse-temurin:17-jdk-jammy AS build
 ARG revision
 WORKDIR /build
-
 COPY mvnw  .
 COPY .mvn .mvn
 COPY pom.xml .
@@ -21,9 +21,8 @@ RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -DskipTests -Drevision=${revis
 FROM base AS final
 WORKDIR /app
 COPY --from=build /build/target/java-boot-todo-*.jar java-boot-todo.jar
-COPY --from=datadog/serverless-init:beta9 /datadog-init datadog-init
+COPY --from=datadog/serverless-init:1.0.0 /datadog-init datadog-init
 RUN curl -s -L -o dd-java-agent.jar https://dtdg.co/latest-java-tracer
-
 ENTRYPOINT ["/app/datadog-init"]
 CMD [ \
     "java", \
