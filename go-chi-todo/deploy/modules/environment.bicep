@@ -19,7 +19,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
   }
 }
 
-resource environment 'Microsoft.App/managedEnvironments@2022-10-01' = {
+resource environment 'Microsoft.App/managedEnvironments@2023-05-01' = {
   name: '${namePrefix}-env'
   location: location
   properties: {
@@ -33,6 +33,12 @@ resource environment 'Microsoft.App/managedEnvironments@2022-10-01' = {
     vnetConfiguration: {
       infrastructureSubnetId: infrastructureSubnetId
     }
+    workloadProfiles: [
+      {
+        name: 'Consumption'
+        workloadProfileType: 'Consumption'
+      }
+    ]
   }
 }
 

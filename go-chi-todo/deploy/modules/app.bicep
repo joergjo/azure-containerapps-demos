@@ -19,7 +19,7 @@ param postgresHost string
 @description('Specifies the database name to use.')
 param database string
 
-resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-31-preview' existing = {
+resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
   name: identityUPN
 }
 
@@ -63,7 +63,7 @@ var secretNames = map(secrets, s => s.name)
 var envVars = filter(allEnvVars, e => (contains(e, 'secretRef') && contains(secretNames, e.secretRef)) || contains(e, 'value'))
 var port = 8080
 
-resource containerApp 'Microsoft.App/containerApps@2022-10-01' = {
+resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: name
   location: location
   identity: {
@@ -130,6 +130,7 @@ resource containerApp 'Microsoft.App/containerApps@2022-10-01' = {
         ]
       }
     }
+    workloadProfileName: 'Consumption'
   }
 }
 
