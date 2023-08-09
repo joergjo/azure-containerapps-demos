@@ -1,12 +1,20 @@
-FROM --platform=$BUILDPLATFORM golang:1.20 AS build
-WORKDIR /src
-ARG TARGETOS TARGETARCH
-RUN --mount=target=. \
-    --mount=type=cache,target=/root/.cache/go-build \
-    --mount=type=cache,target=/go/pkg \
-    GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go build -o /out/go-chi-todo .
+# syntax=docker/dockerfile:1
 
-FROM --platform=$BUILDPLATFORM gcr.io/distroless/static:nonroot AS final
+ARG GO_VERSION=1.21
+FROM --platform=$BUILDPLATFORM golang:${GO_VERSION} AS build
+ARG TARGETOS TARGETARCH
+WORKDIR /src
+
+RUN --mount=type=cache,target=/go/pkg/mod/ \
+    --mount=type=bind,source=go.sum,target=go.sum \
+    --mount=type=bind,source=go.mod,target=go.mod \
+    go mod download -x
+
+RUN --mount=type=cache,target=/go/pkg/mod/ \
+    --mount=type=bind,target=. \
+    GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go build -o /bin/server .
+
+FROM gcr.io/distroless/static:nonroot AS final
 EXPOSE 8080
-COPY --from=build /out/go-chi-todo ./
-ENTRYPOINT ["./go-chi-todo"]
+COPY --from=build /bin/server /bin/
+ENTRYPOINT [ "/bin/server" ]

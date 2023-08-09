@@ -7,12 +7,13 @@ import (
 	"sync"
 	"time"
 
+	"log/slog"
+
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"golang.org/x/exp/slog"
 )
 
 const ossRDBMS = "https://ossrdbms-aad.database.windows.net/.default"
