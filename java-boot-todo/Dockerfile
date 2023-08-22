@@ -1,16 +1,16 @@
+ARG revision=1.0.0
+
 FROM eclipse-temurin:17-jre-jammy AS base
 EXPOSE 8080
 
 FROM eclipse-temurin:17-jdk-jammy AS build
+ARG revision
 WORKDIR /build
-
 COPY mvnw  .
 COPY .mvn .mvn
 COPY pom.xml .
-RUN ./mvnw -B dependency:go-offline 
-
 COPY src src
-RUN ./mvnw -B -DskipTests clean package 
+RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -DskipTests -Drevision=${revision} clean package
 
 FROM base AS final
 WORKDIR /app

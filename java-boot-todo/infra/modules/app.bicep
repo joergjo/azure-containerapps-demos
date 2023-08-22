@@ -11,7 +11,7 @@ param environmentId string
 param image string
 
 @description('Specifies the container app\'s user assigned managed identity\'s UPN.')
-param identityUPN string
+param identityUpn string
 
 @description('Specifies the Azure Database for PostgreSQL server\'s FQDN.')
 param postgresHost string
@@ -33,14 +33,36 @@ param ddSite string
 @description('Specifies the Datadog environment tag.')
 param ddEnv string
 
+@description('Specifies the Azure Container registry name to pull from.')
+param containerRegistryName string
+
+@description('Specifies the tags for all resources.')
+param tags object = {}
+
 resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
-  name: identityUPN
+  name: identityUpn
+}
+
+resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-06-01-preview' existing = {
+  name: containerRegistryName
+}
+
+var acrPullRole = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
+
+resource acrPullAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: containerRegistry 
+  name: guid(subscription().id, resourceGroup().id, appIdentity.id, acrPullRole)
+  properties: {
+    roleDefinitionId: acrPullRole
+    principalType: 'ServicePrincipal'
+    principalId: appIdentity.properties.principalId
+  }
 }
 
 var allSecrets = [
   {
     name: 'postgres-user'
-    value: identityUPN
+    value: identityUpn
   }
   {
     name: 'datadog-api-key'
@@ -108,25 +130,36 @@ var allEnvVars = [
 var secretNames = map(secrets, s => s.name)
 var envVars = filter(allEnvVars, e => (contains(e, 'secretRef') && contains(secretNames, e.secretRef)) || contains(e, 'value'))
 
-resource containerApp 'Microsoft.App/containerApps@2023-04-01-preview' = {
+resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: name
   location: location
+  tags: union(tags, { 'azd-service-name': 'todoapi' })
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
       '${appIdentity.id}': {}
     }
   }
+  dependsOn: [
+    acrPullAssignment
+  ]
   properties: {
     managedEnvironmentId: environmentId
     configuration: {
+      activeRevisionsMode: 'single'
+      dapr: {
+        enabled: false
+      }
       ingress: {
         external: true
         targetPort: 8080
       }
-      dapr: {
-        enabled: false
-      }
+      registries: [
+        {
+          server: containerRegistry.properties.loginServer
+          identity: appIdentity.id
+        }
+      ]
       secrets: secrets
     }
     template: {
@@ -190,3 +223,4 @@ resource containerApp 'Microsoft.App/containerApps@2023-04-01-preview' = {
 }
 
 output fqdn string = containerApp.properties.configuration.ingress.fqdn
+output name string = containerApp.name

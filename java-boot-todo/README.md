@@ -4,7 +4,7 @@
 
 This application is based on a [sample To Do API from Azure's Spring Boot docs](https://docs.microsoft.com/en-us/azure/developer/java/spring-framework/configure-spring-data-jpa-with-azure-postgresql) and has been enhanced to
 - use a [User-assigned Managed Identity](https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview) to [access the PostgreSQL database "passwordless"](https://learn.microsoft.com/en-us/azure/developer/java/spring-framework/migrate-postgresql-to-passwordless-connection).
-- 🔥 send telemetry to Datadog ([feature still in Beta](https://docs.datadoghq.com/serverless/azure_container_apps/))
+- 🔥 send telemetry to [Datadog](https://docs.datadoghq.com/serverless/azure_container_apps/?code-lang=java)
 - use structured JSON logging with [logback](https://logback.qos.ch)
 - [seed test data](#spring-boot-profiles)
 
@@ -22,110 +22,117 @@ that also make use of Flexible Server.
 
 ## Prerequisites
 
-- [Azure CLI 2.0](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) (**v2.43** or newer)
-- Azure Container App extension for Azure CLI
+The following prerequisites are required to use this application. Please ensure
+that you have them all installed locally.
 
-  ```bash
-  az extension add --name containerapp --upgrade  
-  ```
-- Bicep extension for Azure CLI
-  ```bash
-  az bicep upgrade
-  ``` 
-- A bash shell. On Windows 10/11, [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/install) provides you the best experience.
-- The [PostgreSQL psql](https://www.postgresql.org/docs/current/app-psql.html) client (14.0 or later)
+- [Azure Developer CLI](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- The [PostgreSQL psql](https://www.postgresql.org/docs/current/app-psql.html) client (14.0 or later) and available on your `$PATH`. 
+- A bash shell. On macOS/Linux, this is available out of the box. On Windows 10/11, use [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/install) with your preferred Linux distribution (e.g., [Ubuntu 20 LTS](https://apps.microsoft.com/store/detail/ubuntu-20046-lts/9MTTCL66CPXJ)).
 
 
-## [Deploy to an Azure Container App](#deploy-to-azure)
+## Quickstart
 
-The bash script [`deploy.sh`](deploy/deploy.sh) allows you to deploy the application as an Azure Container App with all required dependencies.
-Before running the script, you must export the following environment variables:
-
-| Environment variable              | Purpose                               | Default value        |
-| --------------------------------- | ------------------------------------- | -------------------- |
-| `CONTAINERAPP_RESOURCE_GROUP`     | Resource group to deploy to           | none                 |
-| `CONTAINERAPP_POSTGRES_LOGIN`     | PostgreSQL admin user login           | none                 |
-| `CONTAINERAPP_POSTGRES_LOGIN_PWD` | PostgreSQL admin user password        | none                 |
-| `CONTAINERAPP_DD_API_KEY`         | Datadog API Key                       | none                 |
-| `CONTAINERAPP_DD_APPLICATION_KEY` | Datadog Application Key               | none                 |
-
-> `CONTAINERAPP_POSTGRES_LOGIN` and `CONTAINERAPP_POSTGRES_LOGIN_PWD` designate a regular,
-> non-Azure AD integrated PostgreSQL admin user. This user is currently required for deployment, but
-> _not_ used afterwards. 
-
-Depending on whether you have exported `CONTAINERAPP_DD_API_KEY`, the script will either deploy
-the app with or without Datadog support.
+This sample uses the Azure Developer CLI to provision the required Azure services and
+to deploy the application.
 
 ```bash
-cd <path-to-project-directory>/deploy
-export CONTAINERAPP_RESOURCE_GROUP=todoapi-passwordless
-export CONTAINERAPP_POSTGRES_LOGIN=flexadmin
-# Add non-letter characters to satisfy password strength requirement 
-export CONTAINERAPP_POSTGRES_LOGIN_PWD="$(openssl rand -hex 20)##"
-# Export to enable Datadog support
-# export CONTAINERAPP_DD_API_KEY=<your-dd-api-key>
-# export CONTAINERAPP_DD_APPLICATION_KEY=<your-dd-application-key>
+# Log in to azd (only required before first use)
+azd auth login
+
+# Set a Postgres admin login and password
+azd env set POSTGRES_LOGIN todoadmin
+azd env set POSTGRES_LOGIN_PASSWORD "$(openssl rand -hex 20)##"
+
+# Set required Datadog parameters
+azd env set DD_API_KEY <Datadog API Key>
+azd env set DD_ENV <Datadog environment>
+
+# Set Datadog site - if not set, defaults to datadoghq.com
+azd env set DD_SITE <Datadog site>
+
+# Provision the Azure services
+azd provision
+
+# Build your own application container image and deploy
+azd deploy
 ```
 
-Next, execute `deploy.sh`:
+`azd` will prompt you to select an Azure subscription, an environment name (e.g., `todoapi-demo`) and an Azure region when deploying the app for the first time.
 
-```bash
-./deploy.sh
-```
+Instead of using `azd provision` and `azd deploy`, you can combine
+these in one command: `azd up`.
 
-## Deployment Options
+>Unlike other samples available in this repo, running `azd deploy` _is_ required. 
+>If you only run `azd provision`, the included Bicep templates will provision a 
+>[ready-tou-use container image from Docker Hub](https://hub.docker.com/repository/docker/joergjo/java-boot-todo/general). The problem is that the PostgreSQL database used by
+>the app can only be provisioned after `azd provision` has finished. By that time, the
+>app has already been started and failed to create the database schema, which in turn
+>causes its startuo probe to fail. Extending the startup probe to try for a rather prolonged
+>amount of time seemed less desirable than running two `azd` commands.
 
-You can control additional deployment details (e.g., the Azure region to deploy to) by exporting the following environment variables:
+`POSTGRES_LOGIN` and `POSTGRES_LOGIN_PASSWORD` designate a regular, non-Azure AD integrated PostgreSQL admin user. This user is required only at deployment tine, but _not_ used by the application at runtime. 
 
-| Environment variable              | Purpose                               | Default value                                                          |
-| --------------------------------- | ------------------------------------- | ---------------------------------------------------------------------- |
-| `CONTAINERAPP_LOCATION`           | Azure region to deploy to             | `westeurope`                                                           |
-| `CONTAINERAPP_NAME`               | Name of the Azure Container App       | `todoapi`                                                              |
-| `CONTAINERAPP_IMAGE`              | Application container image           | `joergjo/java-boot-todo:latest` or `joergjo/java-boot-todo:dd-latest`  |
-| `CONTAINERAPP_POSTGRES_DB`        | Database name used by the application | `demo`                                                                 |
-| `CONTAINERAPP_DD_SITE`            | Datadog site                          | `datadoghq.com`                                                        |
-| `CONTAINERAPP_DD_ENV`             | Datadog `env` tag                     | `dev`                                                                  |
+For more information on the various `DD_*` settings, see [Datadog's documentation](https://docs.datadoghq.com/serverless/azure_container_apps/?code-lang=java#environment-variables).
 
 
 ## Deployed Resources
 
-The Bicep templates create the following Azure resources:
+The Azure Developer CLI will use the included [Bicep templates](./infra/) to create the following Azure resources:
 - An [Azure Container App environment](https://docs.microsoft.com/en-us/azure/container-apps/environment).
 - An [Azure Container App](https://learn.microsoft.com/en-us/azure/container-apps/overview) for the application.
-- A [Log Analytics workspace](https://docs.microsoft.com/en-us/azure/container-apps/monitor?tabs=bash). Container Apps environments require this. The application logs to stdout and hence its log will be written to the workspace, but this can be turned off. Note that if you enable Datadog support, the logs will be written to both Datadog _and_ Log Analytics.
-- An [Azure Database for PostgreSQL Flexible Server](https://docs.microsoft.com/en-us/azure/postgresql/flexible-server/overview) that supports Azure AD authenticatiob. This is required by the application.
-- [A Virtual Network for the Container Apps environment](https://docs.microsoft.com/en-us/azure/container-apps/vnet-custom?tabs=bash&pivots=azure-cli). Since the deployment script requires access to the PostgreSQL server, the Flexible Server is _not_ injected in the virtual network. 
+- A [Log Analytics workspace](https://docs.microsoft.com/en-us/azure/container-apps/monitor?tabs=bash). The application logs to stdout and hence its log will be written to the workspace, but this can be turned off. Note that if you are using Datadog, the logs will be written to both Datadog _and_ Log Analytics by default.
+- An [Azure Database for PostgreSQL Flexible Server](https://docs.microsoft.com/en-us/azure/postgresql/flexible-server/overview) that supports Azure AD authentication.
+- [A Virtual Network for the Container Apps environment](https://docs.microsoft.com/en-us/azure/container-apps/vnet-custom?tabs=bash&pivots=azure-cli). The Flexible Server is _not_ injected in the virtual network to keep the deployment of the application simple. 
 - A [User-assigned Managed Identity](https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview) for the application.
+- An [Azure Container Registry](https://learn.microsoft.com/en-us/azure/container-registry/) to which your the container images built by running `azd provision` are pushed.
+
+### Datadog support
+In case you want to use the sample without Datadog support, either don't set the required Datadog settings or use the included alternate Dockerfile to build an image that does not include Datadog's agent.
+
+To build an image without Datadog support baked in, update the `services.todoapi.docker.path` field in [`azure.yaml`](azure.yaml) as follows:
+
+```yaml
+services:
+  todoapi:
+    project: .
+    language: java
+    host: containerapp
+    docker:
+      path: ./Dockerfile
+```
 
 
-## Building the application (optional)
+## Notes for hacking on the sample
 
-### Building the application on your machine
+### Building and running the application on your machine
 
-Building the application yourself is only required if you want to change it or its configuration (e.g., replace PostgreSQL with MySQL).
+If you wan to hack on the sample, I recommend installing the [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) in addition to the Azure Developer CLI.
 
 The application has been set up using the [Spring Boot Initializer](https://start.spring.io) to use JDK 17 and Maven, so follow the usual steps to build a Spring Boot application in your favorite IDE or using the command line. If you are using [Visual Studio Code](https://code.visualstudio.com/), the editor will prompt to install all recommended extensions if you don't have them installed already.
 
-As mentioned before, if you run the application locally but connect to Azure Database, you must provide an alternate identity that the application can use to log in to Azure AD since there is no managed identity on your PC or Mac.
+If you run the application locally but still connect to an Azure Database for PostgreSQL, you must provide an alternate identity that the application can use for authenticating
+with Azure AD, since there is no managed identity on your PC or Mac.
 
-The simplest option is to log in to Azure CLI and grant your user access to the Flexible Server. If you have set up the Flexible Server with the included deployment script, this will be the case. See this [article](https://learn.microsoft.com/en-us/azure/developer/java/spring-framework/authentication) to understand how this works.
+The simplest solution is to log in to Azure CLI and grant your Azure AD user access to your Azure Database for PostgreSQL Flexible Server. See this [article](https://learn.microsoft.com/en-us/azure/developer/java/spring-framework/authentication) to understand how this works.
 
-### Building the application's container image
+### Running the application with Docker Compose
 
-Prebuilt images with and without Datadog support are available on [Docker Hub](https://hub.docker.com/repository/docker/joergjo/java-boot-todo). These container images are used when you deploy the application with the included [deployment script](deploy/deploy.sh).
+Prebuilt images with and without Datadog support are available on [Docker Hub](https://hub.docker.com/repository/docker/joergjo/java-boot-todo). 
 
-If you want to build your own container image, use the included Docker Compose files:
+If you want to build your own container image locally, use the included Docker Compose files:
 
 ```bash
 cd <path-to-project-directory>
+
+# With Datadog supprt
+docker compose -f "Dockerfile.dd" build
+
+# Without Datadog support
 docker compose build
-docker tag java-boot-todo <your-registry>/java-boot-todo:<your-tag>
-docker push <your-registry>/java-boot-todo:<your-tag>
 ```
 
-> If you are using an older version of Docker, you may have to use `docker-compose build` (note the dash).
-
-The included Compose files make use of [multi-stage builds](https://docs.docker.com/develop/develop-images/multistage-build/), so they will work on any machine which has Docker installed _without_ needing a local JDK and Maven installation.
+The included Docker Compose files make use of [multi-stage builds](https://docs.docker.com/develop/develop-images/multistage-build/), so they will work on any machine which has Docker installed _without_ needing a local JDK and Maven installation.
 
 The Compose files can also be used to run the application locally:
 
@@ -133,57 +140,11 @@ The Compose files can also be used to run the application locally:
 - `compose.all.yaml` runs the application and a PostgreSQL database container. In this case, username and password are used instead of Azure AD.
 - `compose.db.yaml` runs a PostgreSQL database container. In this case, username and password are used instead of Azure AD.
 
-### Datadog support
 
-Datadog support is provided by through a separate Dockerfile. By default, the Composes file will build the application
-without Datadog support. To build a container image with Datadog support, export `DOCKERFILE` as follows:
-
-```bash
-cd <path-to-project-directory>
-export DOCKERFILE=Dockerfile.dd.buildkit
-```
-
-Instead of exporting an environment variable, you can create an `.env` file in the repo's root directory. Docker Compose will evaluate the content of this file by default.
-
-```bash
-cd <path-to-project-directory>
-echo "DOCKERFILE=Dockerfile.dd.buildkit" > .env
-```
-
-The [Dockerfile](Dockerfile.dd.buildkit) sets the following Datadog specific environment variables:
-```Dockerfile
-ARG revision=1.0.0
-...
-ENV DD_SERVICE=java-boot-todo
-ENV DD_VERSION=${revision}
-ENV DD_PROFILING_ENABLED=true
-ENV DD_LOGS_ENABLED=true
-ENV DD_TRACE_ENABLED=true
-```
-
-While I chose to hard-code the service name tag, you can override the version tag by setting the environment variable `REVISION`, which sets the Docker build arg `revision`. This also overrides the `version` attribute of the project's `pom.xml`, so that Datadog's version tag and the artifact's version always match.
-
-To override the version, export `REVISION`:
-
-```bash
-cd <path-to-project-directory>
-export DOCKERFILE=Dockerfile.dd.buildkit
-export REVISION=2.0.0
-```
-
-Or add it to your `.env`file:
-
-```bash
-cd <path-to-project-directory>
-echo "DOCKERFILE=Dockerfile.dd.buildkit" > .env
-echo "REVISION=2.0.0" >> .env
-```
-
-
-## Spring Boot Profiles
+### Spring Boot Profiles
 
 The project uses a few Spring Boot profiles to enable or disable certain features:
 
 - `json-logging`: Enables JSON Logging instead of the standard Logback text format.
 - `prod`: Disables seeding of test data. The application's database will be empty.
-- `local`: Disables passwordless authentication and falls back to username/password authentication. This is used for local development with Docker Compose.
+- `local`: Disables passwordless authentication and falls back to username/password authentication. This is useful local development with Docker Compose.

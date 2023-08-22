@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: todoapi
+hooks:
+  preprovision:
+    posix:
+      shell: sh
+      run: |
+        client_ip="$(curl -s 'https://api.ipify.org?format=text')"
+        azd env set CLIENT_PUBLIC_IP $client_ip
+        current_user_upn=$(az ad signed-in-user show --query userPrincipalName --output tsv)
+        azd env set CURRENT_USER_UPN "$current_user_upn"
+        current_user_objectid=$(az ad signed-in-user show --query id --output tsv)
+        azd env set CURRENT_USER_OBJECTID "$current_user_objectid"
+  postprovision:
+    posix:
+      shell: sh
+      run: |
+        current_user_upn=$(az ad signed-in-user show --query userPrincipalName --output tsv)
+        token=$(az account get-access-token --resource-type oss-rdbms --query accessToken --output tsv)
+        app_identity_upn=$(azd env get-values --output json | jq -r .AZURE_APP_IDENTITY_UPN)
+        pg_host=$(azd env get-values --output json | jq -r .AZURE_POSTGRESQL_SERVER_FQDN)
+        database=$(azd env get-values --output json | jq -r .AZURE_POSTGRESQL_DATABASE_NAME)
+        export PGPASSWORD=$token
+
+        cat << EOF > prepare-db.generated.sql
+        DO \$\$
+        DECLARE
+          mi_cnt INT;
+        BEGIN
+          SELECT COUNT(*) FROM pgaadauth_list_principals(false) WHERE rolname = '${app_identity_upn}' INTO mi_cnt;
+          IF mi_cnt = 0 THEN
+              PERFORM pgaadauth_create_principal('${app_identity_upn}', false, false);
+          END IF;
+        END \$\$;
+        CREATE DATABASE "${database}";
+        EOF
+
+        psql "host=${pg_host} user=${current_user_upn} dbname=postgres sslmode=require" \
+          -f prepare-db.generated.sql \
+          -v "ON_ERROR_STOP=1"
+services:
+  todoapi:
+    project: .
+    language: java
+    host: containerapp
+    docker:
+      path: ./Dockerfile.dd

@@ -5,9 +5,10 @@ EXPOSE 8080
 ARG revision
 ENV DD_SERVICE=java-boot-todo
 ENV DD_VERSION=${revision}
-ENV DD_PROFILING_ENABLED=true
 ENV DD_LOGS_ENABLED=true
 ENV DD_TRACE_ENABLED=true
+ENV DD_TRACE_SAMPLE_RATE=1.0
+ENV DD_LOGS_INJECTION=true
 
 FROM eclipse-temurin:17-jdk-jammy AS build
 ARG revision
@@ -21,12 +22,10 @@ RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -DskipTests -Drevision=${revis
 FROM base AS final
 WORKDIR /app
 COPY --from=build /build/target/java-boot-todo-*.jar java-boot-todo.jar
-COPY --from=datadog/serverless-init:1.0.0 /datadog-init datadog-init
-RUN curl -s -L -o dd-java-agent.jar https://dtdg.co/latest-java-tracer
+COPY --from=datadog/serverless-init:1 /datadog-init datadog-init
+ADD https://dtdg.co/latest-java-tracer /dd_tracer/java/dd-java-agent.jar
 ENTRYPOINT ["/app/datadog-init"]
 CMD [ \
     "java", \
-    "-javaagent:./dd-java-agent.jar", \
-    "-XX:FlightRecorderOptions=stackdepth=256", \
     "-jar", \
     "java-boot-todo.jar"]  

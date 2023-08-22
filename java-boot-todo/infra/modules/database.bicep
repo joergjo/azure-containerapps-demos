@@ -1,5 +1,5 @@
-@description('Specifies the name of the Azure Database for PostgreSQL flexible server.')
-param server string = 'server-${uniqueString(resourceGroup().id)}'
+@description('Specifies the name prefix of all resources.')
+param namePrefix string
 
 @description('Specifies the name of PostgreSQL database used by the application.')
 param database string = ''
@@ -12,6 +12,7 @@ param location string
   '12'
   '13'
   '14'
+  '15'
 ])
 param version string = '14'
 
@@ -27,7 +28,7 @@ param postgresLoginPassword string
 param aadPostgresAdmin string
 
 @description('Specifies the Azure AD PostgreSQL administrator user\'s object ID.')
-param aadPostgresAdminObjectID string
+param aadPostgresAdminObjectId string
 
 @description('Specifies the subnet resource ID of the delegated subnet for Azure Database.')
 param postgresSubnetId string
@@ -36,12 +37,15 @@ param postgresSubnetId string
 param privateDnsZoneId string
 
 @description('Specifies the client IP address to whitelist in the database server\'s firewall.')
-param clientIP string
+param clientPublicIpAddress string
 
 @description('Specifies whether to create the database specified by \'database\'. This should only be set if Azure AD is not used.')
 param deployDatabase bool = (database != '')
 
-var deployAsPublic = (clientIP != '')
+@description('Specifies the tags for all resources.')
+param tags object = {}
+
+var deployAsPublic = (clientPublicIpAddress != '')
 
 var firewallrules = [
   {
@@ -51,18 +55,22 @@ var firewallrules = [
   }
   {
     name: 'allow-client'
-    startIpAddress: clientIP
-    endIpAddress: clientIP
+    startIpAddress: clientPublicIpAddress
+    endIpAddress: clientPublicIpAddress
   }
 ]
 
-resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01' = {
-  name: server
+var uid = uniqueString(resourceGroup().id)
+var serverName = '${namePrefix}${uid}'
+
+resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-03-01-preview' = {
+  name: serverName
   location: location
   sku: {
     name: 'Standard_B1ms'
     tier: 'Burstable'
   }
+  tags: tags
   properties: {
     administratorLogin: postgresLogin
     administratorLoginPassword: postgresLoginPassword
@@ -90,13 +98,13 @@ resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01' =
   }
 }
 
-resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2022-12-01' = if (deployDatabase) {
+resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2023-03-01-preview' = if (deployDatabase) {
   name: database
   parent: postgresServer
 }
 
-resource postgresAzureADAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2022-12-01' = {
-  name: aadPostgresAdminObjectID
+resource postgresAzureADAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2023-03-01-preview' = {
+  name: aadPostgresAdminObjectId
   parent: postgresServer
   properties: {
     principalName: aadPostgresAdmin
@@ -106,7 +114,7 @@ resource postgresAzureADAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/adminis
 }
 
 @batchSize(1)
-resource firewallRules 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-12-01' = [for rule in firewallrules: if (deployAsPublic)  {
+resource firewallRules 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2023-03-01-preview' = [for rule in firewallrules: if (deployAsPublic)  {
   name: rule.name
   parent: postgresServer
   properties: {
@@ -117,3 +125,4 @@ resource firewallRules 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@
 
 output serverFqdn string = postgresServer.properties.fullyQualifiedDomainName
 output serverName string = postgresServer.name
+output databaseName string = postgresDatabase.name

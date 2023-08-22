@@ -1,6 +1,4 @@
 @description('Specifies the name prefix of all resources.')
-@minLength(5)
-@maxLength(20)
 param namePrefix string
 
 @description('Specifies the location to deploy to.')
@@ -9,13 +7,20 @@ param location string
 @description('Specifies the name of the private DNS zone.')
 param privateDnsZoneName string = '${namePrefix}.postgres.database.azure.com'
 
-
 @description('Specifies whether a private DNS zone will be deployed')
 param deployDnsZone bool = true
 
-resource vnet 'Microsoft.Network/virtualNetworks@2022-09-01' = {
-  name: '${namePrefix}-vnet'
+@description('Specifies the tags for all resources.')
+param tags object = {}
+
+var uid = uniqueString(resourceGroup().id)
+var vnetName = '${namePrefix}${uid}-vnet'
+var nsgName = '${namePrefix}${uid}-infra-nsg'
+
+resource vnet 'Microsoft.Network/virtualNetworks@2023-04-01' = {
+  name: vnetName
   location: location
+  tags: tags
   properties: {
     addressSpace: {
       addressPrefixes: [
@@ -36,7 +41,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-09-01' = {
             }
           ]
           networkSecurityGroup: {
-            id: networkSecurityGroup.id
+            id: nsg.id
           }
         }
       }
@@ -58,9 +63,10 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-09-01' = {
   }
 }
 
-resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2021-02-01' = {
-  name: '${namePrefix}-infra-nsg'
+resource nsg 'Microsoft.Network/networkSecurityGroups@2023-04-01' = {
+  name: nsgName
   location: location
+  tags: tags
   properties: {
     securityRules: [
       {
@@ -96,12 +102,14 @@ resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2021-02-0
 resource privateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = if (deployDnsZone) {
   name: privateDnsZoneName
   location: 'global'
+  tags: tags
 }
 
 resource privateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = if (deployDnsZone) {
   parent: privateDnsZone
   name: '${vnet.name}-link'
   location: 'global'
+  tags : tags
   properties: {
     registrationEnabled: true
     virtualNetwork: {

@@ -7,7 +7,7 @@ services:
   todo-api:
     build:
       context: .
-      dockerfile: ${DOCKERFILE:-Dockerfile.buildkit}
+      dockerfile: ${DOCKERFILE:-Dockerfile}
     image: java-boot-todo:${TAG:-latest}
     ports:
       - "8080:8080"

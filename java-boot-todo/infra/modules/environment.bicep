@@ -1,27 +1,30 @@
 @description('Specifies the name prefix of all resources.')
-@minLength(5)
-@maxLength(20)
 param namePrefix string
 
 @description('Specifies the location to deploy to.')
-param location string
+param location string 
 
 @description('Specifies the subnet resource ID for the Container App environment.')
 param infrastructureSubnetId string
 
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
-  name: '${namePrefix}-logs'
-  location: location
-  properties: {
-    sku: {
-      name: 'PerGB2018'
-    }
-  }
+@description('Specifies the Log Analytics workspace to connect to')
+param workspaceName string
+
+@description('Specifies the tags for all resources.')
+param tags object = {}
+
+var uid = uniqueString(resourceGroup().id)
+var environmentName = '${namePrefix}${uid}-env'
+var appIdentityName = '${namePrefix}${uid}-mi'
+
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = {
+  name: workspaceName
 }
 
-resource environment 'Microsoft.App/managedEnvironments@2023-04-01-preview' = {
-  name: '${namePrefix}-env'
+resource environment 'Microsoft.App/managedEnvironments@2023-05-01' = {
+  name: environmentName
   location: location
+  tags: tags
   properties: {
     appLogsConfiguration: {
       destination: 'log-analytics'
@@ -44,8 +47,9 @@ resource environment 'Microsoft.App/managedEnvironments@2023-04-01-preview' = {
 
 resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   location: location
-  name: '${namePrefix}-${uniqueString(resourceGroup().id)}-mi'
+  name: appIdentityName
 }
 
-output environmentId string = environment.id
-output identityUPN string = appIdentity.name
+output id string = environment.id
+output name string = environment.name
+output appIdentityUpn string = appIdentity.name
