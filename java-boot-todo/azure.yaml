@@ -33,6 +33,8 @@ hooks:
               PERFORM pgaadauth_create_principal('${app_identity_upn}', false, false);
           END IF;
         END \$\$;
+        GRANT pg_signal_backend TO "${current_user_upn}";
+        DROP DATABASE IF EXISTS "${database}" WITH (FORCE);
         CREATE DATABASE "${database}";
         EOF
 

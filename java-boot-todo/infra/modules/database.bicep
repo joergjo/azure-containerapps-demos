@@ -9,7 +9,6 @@ param location string
 
 @description('Specifies the PostgreSQL version.')
 @allowed([
-  '12'
   '13'
   '14'
   '15'
