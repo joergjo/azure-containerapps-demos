@@ -63,20 +63,20 @@ azd deploy
 Instead of using `azd provision` and `azd deploy`, you can combine
 these in one command: `azd up`.
 
->Unlike other samples available in this repo, running `azd deploy` _is_ required. 
->If you only run `azd provision`, the included Bicep templates will provision a 
->[ready-tou-use container image from Docker Hub](https://hub.docker.com/repository/docker/joergjo/java-boot-todo/general). The problem is that the PostgreSQL database used by
->the app can only be provisioned after `azd provision` has finished. By that time, the
->app has already been started and failed to create the database schema, which in turn
->causes its startuo probe to fail. Extending the startup probe to try for a rather prolonged
->amount of time seemed less desirable than running two `azd` commands.
-
 `POSTGRES_LOGIN` and `POSTGRES_LOGIN_PASSWORD` designate a regular, non-Azure AD integrated PostgreSQL admin user. This user is required only at deployment tine, but _not_ used by the application at runtime. 
 
 For more information on the various `DD_*` settings, see [Datadog's documentation](https://docs.datadoghq.com/serverless/azure_container_apps/?code-lang=java#environment-variables).
 
 
-## Deployed Resources
+### Implementation remarks
+
+`azd provision` deploys the Azure Container App with my own [ready-to-use container image from Docker Hub](https://hub.docker.com/repository/docker/joergjo/java-boot-todo/general). The challenge here is that the PostgreSQL database used by application can only be provisioned _after_ `azd provision` has finished, since the Container Apps's mananaged identity must exist before it can be granted access to the database . After running `azd provision` the application will start and fail to access to database while building its connection pool. Hence the application terminates and is restarted according to its startup probe. This 
+crash and restart cycle will repeat a number of times. The application will eventually be restarted in a stable state and run properly. Running `azd deploy` gets the application up much faster, though. 
+
+Running `azd provision` multiple times will not reset the Container App to use the aforementioned default image, but it will drop and recreate the database. That was
+a conscious decision to keep the database creation logic idempotent.
+
+### Deployed Resources
 
 The Azure Developer CLI will use the included [Bicep templates](./infra/) to create the following Azure resources:
 - An [Azure Container App environment](https://docs.microsoft.com/en-us/azure/container-apps/environment).
