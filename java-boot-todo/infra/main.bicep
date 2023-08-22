@@ -39,10 +39,6 @@ param aadPostgresAdminObjectId string = ''
 @secure()
 param ddApiKey string = ''
 
-@description('Specifies the Datadog application key.')
-@secure()
-param ddApplicationKey string = ''
-
 @description('Specifies the Datadog site.')
 param ddSite string = 'datadoghq.com'
 
@@ -52,6 +48,9 @@ param ddEnv string = 'dev'
 @description('Specifies public IP address used by the executing client.')
 @secure()
 param clientPublicIpAddress string = ''
+
+@description('Specifies whether the app has been previously deployed.')
+param appExists bool = false
 
 // Tags that should be applied to all resources.
 // 
@@ -132,7 +131,7 @@ module environment 'modules/environment.bicep' = {
   }
 }
 
-module app 'modules/app.bicep' = {
+module app 'modules/app-upsert.bicep' = {
   name: 'app'
   scope: rg
   params: {
@@ -144,11 +143,11 @@ module app 'modules/app.bicep' = {
     containerRegistryName: registry.outputs.name
     database: database
     ddApiKey: ddApiKey
-    ddApplicationKey: ddApplicationKey
     ddEnv: ddEnv
     ddSite: ddSite
     identityUpn: environment.outputs.appIdentityUpn
     postgresHost: postgres.outputs.serverFqdn
+    exists: appExists
   }
 }
 

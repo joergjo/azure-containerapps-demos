@@ -10,28 +10,14 @@ param environmentId string
 @description('Specifies the container image.')
 param image string
 
+@description('Specifies the application\'s secrets.')
+param secrets array
+
+@description('Specifies the application\'s environment.')
+param envVars array
+
 @description('Specifies the container app\'s user assigned managed identity\'s UPN.')
 param identityUpn string
-
-@description('Specifies the Azure Database for PostgreSQL server\'s FQDN.')
-param postgresHost string
-
-@description('Specifies the database name to use.')
-param database string
-
-@description('Specifies the Datadog API key.')
-@secure()
-param ddApiKey string
-
-@description('Specifies the Datadog application key.')
-@secure()
-param ddApplicationKey string
-
-@description('Specifies the Datadog site.')
-param ddSite string
-
-@description('Specifies the Datadog environment tag.')
-param ddEnv string
 
 @description('Specifies the Azure Container registry name to pull from.')
 param containerRegistryName string
@@ -58,77 +44,6 @@ resource acrPullAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' 
     principalId: appIdentity.properties.principalId
   }
 }
-
-var allSecrets = [
-  {
-    name: 'postgres-user'
-    value: identityUpn
-  }
-  {
-    name: 'datadog-api-key'
-    value: ddApiKey
-  }
-  {
-    name: 'datadog-application-key'
-    value: ddApplicationKey
-  }
-  {
-    name: 'azure-client-id'
-    value: appIdentity.properties.clientId
-  }
-]
-
-var secrets = filter(allSecrets, s => !empty(s.value))
-
-var allEnvVars = [
-  {
-    name: 'POSTGRESQL_FQDN'
-    value: postgresHost
-  }
-  {
-    name: 'POSTGRESQL_USERNAME'
-    secretRef: 'postgres-user'
-  }
-  {
-    name: 'POSTGRES_DB'
-    value: database
-  }
-  {
-    name: 'SPRING_PROFILES_ACTIVE'
-    value: 'json-logging'
-  }
-  {
-    name: 'AZURE_CLIENT_ID'
-    secretRef: 'azure-client-id'
-  }
-  {
-    name: 'DD_API_KEY'
-    secretRef: 'datadog-api-key'
-  }
-  {
-    name: 'DD_APPLICATION_KEY'
-    secretRef: 'datadog-application-key'
-  }
-  {
-    name: 'DD_ENV'
-    value: ddEnv
-  }
-  {
-    name: 'DD_SITE'
-    value: ddSite
-  }
-  {
-    name: 'DD_AZURE_SUBSCRIPTION_ID'
-    value: subscription().subscriptionId
-  }
-  {
-    name: 'DD_AZURE_RESOURCE_GROUP'
-    value: resourceGroup().name
-  }
-]
-
-var secretNames = map(secrets, s => s.name)
-var envVars = filter(allEnvVars, e => (contains(e, 'secretRef') && contains(secretNames, e.secretRef)) || contains(e, 'value'))
 
 resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: name

@@ -22,6 +22,18 @@
       },
       "postgresLoginPassword": {
         "value": "${POSTGRES_LOGIN_PASSWORD}"
+      },
+      "ddApiKey": {
+        "value": "${DD_API_KEY}"
+      },
+      "ddEnv": {
+        "value": "${DD_ENV}"
+      },
+      "ddSite": {
+        "value": "${DD_SITE}"
+      },
+      "appExists": {
+        "value": "${SERVICE_TODOAPI_RESOURCE_EXISTS=false}"
       }
     }
 }
