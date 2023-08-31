@@ -51,17 +51,15 @@ azd env set DD_ENV <Datadog environment>
 # Set Datadog site - if not set, defaults to datadoghq.com
 azd env set DD_SITE <Datadog site>
 
-# Provision the Azure services
-azd provision
-
-# Build your own application container image and deploy
-azd deploy
+# Provision the infrastructure, build and deploy the application's container image
+azd up
 ```
 
 `azd` will prompt you to select an Azure subscription, an environment name (e.g., `todoapi-demo`) and an Azure region when deploying the app for the first time.
 
-Instead of using `azd provision` and `azd deploy`, you can combine
-these in one command: `azd up`.
+> Instead of using `azd up`, you can use `azd provision` to only deploy the infrastructure and
+> `azd deploy` to build and deploy the application's container image.
+> See [below](#implementation-remarks) to understand the caveats of doing these steps separately.
 
 `POSTGRES_LOGIN` and `POSTGRES_LOGIN_PASSWORD` designate a regular, non-Azure AD integrated PostgreSQL admin user. This user is required only at deployment tine, but _not_ used by the application at runtime.
 
@@ -70,10 +68,13 @@ For more information on the various `DD_*` settings, see [Datadog's documentatio
 ### Implementation remarks
 
 `azd provision` deploys the Azure Container App with my own [ready-to-use container image from Docker Hub](https://hub.docker.com/repository/docker/joergjo/java-boot-todo/general). The challenge here is that the PostgreSQL database used by application can only be provisioned _after_ `azd provision` has finished, since the Container Apps's mananaged identity must exist before it can be granted access to the database . After running `azd provision` the application will start and fail to access to database while building its connection pool. Hence the application terminates and is restarted according to its startup probe. This
-crash and restart cycle will repeat a number of times. The application will eventually be restarted in a stable state and run properly. Running `azd deploy` gets the application up much faster, though.
+crash and restart cycle will repeat a number of times. The application will eventually be restarted in a stable state and run properly. Running `azd deploy` gets the application up and running much faster, that's why it's a easier to just run `azd up`.
 
-Running `azd provision` multiple times will not reset the Container App to use the aforementioned default image, but it will drop and recreate the database. That was
-a conscious decision to keep the database creation logic idempotent.
+Running `azd provision` repeatedly will not reset the Container App to use the aforementioned default image. The Bicep template contain logic that prevent the user from accidentally reverting to the default image once a custom image has been deployed.
+
+Running `azd provision` or `azd up` repeatedly will drop and recreate the database. That was
+a conscious decision to keep the database creation logic idempotent. The application will
+seed some test data on startup.
 
 ### Deployed Resources
 
@@ -145,5 +146,5 @@ The Compose files can also be used to run the application locally:
 The project uses a few Spring Boot profiles to enable or disable certain features:
 
 - `json-logging`: Enables JSON Logging instead of the standard Logback text format.
-- `prod`: Disables seeding of test data. The application's database will be empty.
+- `prod`: Disables seeding of test data. Hence the application's database will be empty after deployment.
 - `local`: Disables passwordless authentication and falls back to username/password authentication. This is useful local development with Docker Compose.

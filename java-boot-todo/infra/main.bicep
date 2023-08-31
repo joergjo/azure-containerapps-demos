@@ -86,6 +86,7 @@ module registry 'modules/registry.bicep' = {
   scope: rg
   params: {
     location: location
+    tags: tags
     namePrefix: !empty(namePrefix) ? namePrefix : defaultNamePrefix
   }
 }
