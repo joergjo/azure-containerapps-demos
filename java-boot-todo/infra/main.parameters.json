@@ -26,6 +26,9 @@
       "ddApiKey": {
         "value": "${DD_API_KEY}"
       },
+      "ddApplicationKey": {
+        "value": "${DD_APPLICATION_KEY}"
+      },
       "ddEnv": {
         "value": "${DD_ENV}"
       },
@@ -34,6 +37,9 @@
       },
       "appExists": {
         "value": "${SERVICE_TODOAPI_RESOURCE_EXISTS=false}"
+      },
+      "namePrefix": {
+        "value": "${NAME_PREFIX}"
       }
     }
 }

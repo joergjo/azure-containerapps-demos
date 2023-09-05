@@ -7,9 +7,6 @@ param location string
 @description('Specifies the name of Azure Container Apps environment to deploy to.')
 param environmentId string
 
-@description('Specifies the container image.')
-param image string
-
 @description('Specifies the container app\'s user assigned managed identity\'s UPN.')
 param identityUpn string
 
@@ -23,11 +20,18 @@ param database string
 @secure()
 param ddApiKey string
 
+@description('Specifies the Datadog Application key.')
+@secure()
+param ddApplicationKey string
+
 @description('Specifies the Datadog site.')
 param ddSite string
 
 @description('Specifies the Datadog environment tag.')
 param ddEnv string
+
+@description('Specifies the Datadog global tags.')
+param ddTags string
 
 @description('Specifies the Azure Container registry name to pull from.')
 param containerRegistryName string
@@ -66,6 +70,10 @@ var allSecrets = [
   {
     name: 'datadog-api-key'
     value: ddApiKey
+  }
+  {
+    name: 'datadog-application-key'
+    value: ddApplicationKey
   }
   {
     name: 'azure-client-id'
@@ -113,6 +121,10 @@ var allEnvVars = [
     value: ddSite
   }
   {
+    name: 'DD_TAGS'
+    value: ddTags
+  }
+  {
     name: 'DD_AZURE_SUBSCRIPTION_ID'
     value: subscription().subscriptionId
   }
@@ -124,6 +136,7 @@ var allEnvVars = [
 
 var secretNames = map(secrets, s => s.name)
 var envVars = filter(allEnvVars, e => (contains(e, 'secretRef') && contains(secretNames, e.secretRef)) || contains(e, 'value'))
+var image = !empty(ddApiKey) ? 'joergjo/java-boot-todo:dd-sha-f35ff01' : 'joergjo/java-boot-todo:latest'
 
 resource existingContainerApp 'Microsoft.App/containerApps@2023-05-01' existing = if (exists) {
   name: name

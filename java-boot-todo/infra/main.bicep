@@ -12,9 +12,6 @@ param location string
 @description('Specifies the Container App\'s name.')
 param appName string = ''
 
-@description('Specifies the Container App\'s image.')
-param image string = ''
-
 @description('Specifies the name prefix for Azure resources.')
 param namePrefix string = ''
 
@@ -39,11 +36,18 @@ param aadPostgresAdminObjectId string = ''
 @secure()
 param ddApiKey string = ''
 
+@description('Specifies the Datadog Application key.')
+@secure()
+param ddApplicationKey string = ''
+
 @description('Specifies the Datadog site.')
 param ddSite string = 'datadoghq.com'
 
 @description('Specifies the Datadog environment tag.')
 param ddEnv string = 'dev'
+
+@description('Specifies the Datadog global tags.')
+param ddTags string = ''
 
 @description('Specifies public IP address used by the executing client.')
 @secure()
@@ -62,7 +66,6 @@ var tags = {
 }
 
 var defaultAppName = 'todoapi'
-var defaultImage = empty(ddApiKey) ? 'joergjo/java-boot-todo:dd-latest' : 'joergjo/java-boot-todo:latest'
 var defaultNamePrefix = 'aca'
 
 resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
@@ -140,12 +143,13 @@ module app 'modules/app-upsert.bicep' = {
     tags: tags
     environmentId: environment.outputs.id
     name:  !empty(appName) ? appName : defaultAppName
-    image: !empty(image) ? image : defaultImage
     containerRegistryName: registry.outputs.name
     database: database
     ddApiKey: ddApiKey
+    ddApplicationKey: ddApplicationKey
     ddEnv: ddEnv
     ddSite: ddSite
+    ddTags: ddTags
     identityUpn: environment.outputs.appIdentityUpn
     postgresHost: postgres.outputs.serverFqdn
     exists: appExists
