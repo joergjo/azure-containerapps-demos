@@ -17,7 +17,7 @@
 		<revision>1.0.0</revision>
 		<java.version>17</java.version>
 		<logback-contrib.version>0.1.5</logback-contrib.version>
-		<spring-cloud-azure.version>5.3.0</spring-cloud-azure.version>
+		<spring-cloud-azure.version>5.5.0</spring-cloud-azure.version>
 	</properties>
 
 	<dependencies>
