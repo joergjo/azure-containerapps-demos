@@ -35,6 +35,9 @@
       "ddSite": {
         "value": "${DD_SITE}"
       },
+      "ddTags": {
+        "value": "${DD_TAGS}"
+      },
       "appExists": {
         "value": "${SERVICE_TODOAPI_RESOURCE_EXISTS=false}"
       },
