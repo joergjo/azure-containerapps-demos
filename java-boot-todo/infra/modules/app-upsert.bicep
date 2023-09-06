@@ -96,10 +96,10 @@ var allEnvVars = [
     name: 'POSTGRES_DB'
     value: database
   }
-  {
-    name: 'SPRING_PROFILES_ACTIVE'
-    value: 'json-logging'
-  }
+  // {
+  //   name: 'SPRING_PROFILES_ACTIVE'
+  //   value: 'json-logging'
+  // }
   {
     name: 'AZURE_CLIENT_ID'
     secretRef: 'azure-client-id'
