@@ -1,7 +1,6 @@
-package main
+package router
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -11,6 +10,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/joergjo/azure-containerapps-demos/go-chi-todo/internal/log"
+	"github.com/joergjo/azure-containerapps-demos/go-chi-todo/internal/model"
 )
 
 type header struct {
@@ -18,14 +19,14 @@ type header struct {
 	val  string
 }
 
-func newRouter(ts todoStore) *chi.Mux {
+func NewMux(ts model.TodoStore) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(
 		middleware.StripSlashes,
 		middleware.GetHead,
-		middleware.Heartbeat("/healthz"),
+		middleware.Heartbeat("/healthz/live"),
 		middleware.AllowContentType("application/json"))
-	r.Get("/ready", readyHandler(ts))
+	r.Get("/healthz/ready", readyHandler(ts))
 	r.Get("/todo", getManyHandler(ts))
 	r.Post("/todo", postHandler(ts))
 	r.Get("/todo/{id:[0-9]+}", getHandler(ts))
@@ -34,7 +35,7 @@ func newRouter(ts todoStore) *chi.Mux {
 	return r
 }
 
-func getManyHandler(ts todoStore) http.HandlerFunc {
+func getManyHandler(ts model.TodoStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Query().Get("offset")
 		offset, err := strconv.Atoi(p)
@@ -46,60 +47,60 @@ func getManyHandler(ts todoStore) http.HandlerFunc {
 		if err != nil {
 			limit = 50
 		}
-		items, err := ts.list(r.Context(), offset, limit)
+		items, err := ts.List(r.Context(), offset, limit)
 		if err != nil {
-			slog.Error("Error reading from store", ErrorKey, err)
+			slog.Error("reading from store", log.ErrorKey, err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		respond(w, items)
+		respond(w, items, http.StatusOK)
 	}
 }
 
-func getHandler(ts todoStore) http.HandlerFunc {
+func getHandler(ts model.TodoStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		p := chi.URLParam(r, "id")
 		id, _ := strconv.Atoi(p)
-		item, err := ts.find(r.Context(), id)
+		item, err := ts.Find(r.Context(), id)
 		if err != nil {
-			if !errors.Is(err, errEmptyResultSet) {
-				slog.Error("Error reading from store", ErrorKey, err)
+			if !errors.Is(err, model.ErrEmptyResultSet) {
+				slog.Error("reading from store", log.ErrorKey, err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
-			slog.Info(fmt.Sprintf("Item with id %d not found", id))
+			slog.Info(fmt.Sprintf("item with id %d not found", id))
 			http.NotFound(w, r)
 			return
 		}
-		respond(w, item)
+		respond(w, item, http.StatusOK)
 	}
 }
 
-func postHandler(ts todoStore) http.HandlerFunc {
+func postHandler(ts model.TodoStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var item todo
+		var item model.Todo
 		if err := bind(r, &item); err != nil {
-			slog.Error("Error binding request body", ErrorKey, err)
+			slog.Error("binding request body", log.ErrorKey, err)
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 
 		}
-		item, err := ts.create(r.Context(), item)
+		item, err := ts.Create(r.Context(), item)
 		if err != nil {
-			slog.Error("Error creating new todo item to store", ErrorKey, err)
+			slog.Error("creating new todo item to store", log.ErrorKey, err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 		loc := fmt.Sprintf("%s/%d", r.URL.String(), item.Id)
-		respond(w, item, header{name: "Location", val: loc})
+		respond(w, item, http.StatusCreated, header{name: "Location", val: loc})
 	}
 }
 
-func putHandler(ts todoStore) http.HandlerFunc {
+func putHandler(ts model.TodoStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var item todo
+		var item model.Todo
 		if err := bind(r, &item); err != nil {
-			slog.Error("Error binding request body", ErrorKey, err)
+			slog.Error("binding request body", log.ErrorKey, err)
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 
@@ -107,33 +108,33 @@ func putHandler(ts todoStore) http.HandlerFunc {
 		p := chi.URLParam(r, "id")
 		id, _ := strconv.Atoi(p)
 		item.Id = int64(id)
-		item, err := ts.update(r.Context(), item)
+		item, err := ts.Update(r.Context(), item)
 		if err != nil {
-			if !errors.Is(err, errEmptyResultSet) {
-				slog.Error("Error updating todo item in store", ErrorKey, err)
+			if !errors.Is(err, model.ErrEmptyResultSet) {
+				slog.Error("updating todo item in store", log.ErrorKey, err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
-			slog.Info(fmt.Sprintf("Item with id %d not found", id))
+			slog.Info(fmt.Sprintf("item with id %d not found", id))
 			http.NotFound(w, r)
 			return
 		}
-		respond(w, item)
+		respond(w, item, http.StatusOK)
 	}
 }
 
-func deleteHandler(ts todoStore) http.HandlerFunc {
+func deleteHandler(ts model.TodoStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		p := chi.URLParam(r, "id")
 		id, _ := strconv.Atoi(p)
-		err := ts.delete(r.Context(), id)
+		err := ts.Delete(r.Context(), id)
 		if err != nil {
-			if !errors.Is(err, errEmptyResultSet) {
-				slog.Error("Error deleting from store", ErrorKey, err)
+			if !errors.Is(err, model.ErrEmptyResultSet) {
+				slog.Error("deleting from store", log.ErrorKey, err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
-			slog.Info(fmt.Sprintf("Item with id %d not found", id))
+			slog.Info(fmt.Sprintf("item with id %d not found", id))
 			http.NotFound(w, r)
 			return
 		}
@@ -141,35 +142,13 @@ func deleteHandler(ts todoStore) http.HandlerFunc {
 	}
 }
 
-func readyHandler(ts todoStore) http.HandlerFunc {
+func readyHandler(ts model.TodoStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := ts.ping(r.Context()); err != nil {
-			slog.Error("Error checking readiness", ErrorKey, err)
+		if err := ts.Ping(r.Context()); err != nil {
+			slog.Error("checking readiness", log.ErrorKey, err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
 	}
-}
-
-func bind(r *http.Request, v any) error {
-	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
-	return dec.Decode(v)
-}
-
-func respond(w http.ResponseWriter, v any, headers ...header) {
-	b, err := json.Marshal(v)
-	if err != nil {
-		slog.Error("Error encoding object", ErrorKey, err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	for _, h := range headers {
-		w.Header().Add(h.name, h.val)
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(b)
 }

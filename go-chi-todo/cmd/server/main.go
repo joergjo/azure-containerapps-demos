@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,6 +11,10 @@ import (
 	"time"
 
 	"log/slog"
+
+	"github.com/joergjo/azure-containerapps-demos/go-chi-todo/internal/log"
+	"github.com/joergjo/azure-containerapps-demos/go-chi-todo/internal/postgres"
+	"github.com/joergjo/azure-containerapps-demos/go-chi-todo/internal/router"
 )
 
 func main() {
@@ -27,39 +30,24 @@ func main() {
 	run(listenAddr, connString, debug)
 }
 
-func newLogger(w io.Writer, debug bool) *slog.JSONHandler {
-	opts := slog.HandlerOptions{
-		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-			if a.Key == slog.TimeKey {
-				return slog.Time(a.Key, a.Value.Time().UTC())
-			}
-			return a
-		},
-	}
-	if debug {
-		opts.Level = slog.LevelDebug
-	}
-	return slog.NewJSONHandler(w, &opts)
-}
-
 func run(listenAddr string, connString string, debug bool) {
-	slog.SetDefault(slog.New(newLogger(os.Stderr, debug)))
+	slog.SetDefault(slog.New(log.NewStructured(os.Stderr, debug)))
 
 	if connString == "" {
-		slog.Info("No connection string specified, using pqlib style PG* environment variables instead")
+		slog.Info("no connection string specified, using pqlib style PG* environment variables instead")
 	}
 
 	if listenAddr == "" {
 		listenAddr = ":8080"
 	}
 
-	store, err := newPostgresStore(context.Background(), connString)
+	store, err := postgres.NewStore(context.Background(), connString)
 	if err != nil {
-		slog.Error("Failed to initialize data store", ErrorKey, err)
+		slog.Error("initializing data store", log.ErrorKey, err)
 		os.Exit(1)
 	}
 
-	r := newRouter(store)
+	r := router.NewMux(store)
 	s := http.Server{
 		Addr:              listenAddr,
 		Handler:           r,
@@ -71,29 +59,29 @@ func run(listenAddr string, connString string, debug bool) {
 	done := make(chan struct{})
 	go shutdown(context.Background(), &s, done)
 
-	slog.Info(fmt.Sprintf("Starting server, listening on %s", listenAddr))
+	slog.Info(fmt.Sprintf("starting server, listening on %s", listenAddr))
 	err = s.ListenAndServe()
-	slog.Info("Waiting for shutdown to complete")
+	slog.Info("waiting for shutdown to complete")
 	<-done
-	slog.Error("Server has shut down", ErrorKey, err)
-	slog.Info("Disconnecting from database")
+	slog.Error("server has shut down", log.ErrorKey, err)
+	slog.Info("disconnecting from database")
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	store.close(ctx)
-	slog.Info("Shutdown complete")
+	store.Close(ctx)
+	slog.Info("shutdown complete")
 }
 
 func shutdown(ctx context.Context, s *http.Server, done chan struct{}) {
 	sigch := make(chan os.Signal, 1)
 	signal.Notify(sigch, syscall.SIGINT, syscall.SIGTERM)
 	sig := <-sigch
-	slog.Warn(fmt.Sprintf("Got signal %v", sig))
+	slog.Warn(fmt.Sprintf("received signal %v", sig))
 
 	childCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
 	if err := s.Shutdown(childCtx); err != nil {
-		slog.Error("Error during shutdown", ErrorKey, err)
+		slog.Error("shutting down", log.ErrorKey, err)
 	}
-	done <- struct{}{}
+	close(done)
 }

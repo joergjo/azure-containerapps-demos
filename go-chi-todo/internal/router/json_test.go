@@ -1,4 +1,4 @@
-package main
+package router
 
 import (
 	"bytes"
@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/joergjo/azure-containerapps-demos/go-chi-todo/internal/model"
 )
 
 func TestRespond(t *testing.T) {
@@ -21,7 +23,7 @@ func TestRespond(t *testing.T) {
 		{
 			name: "single_todo_no_header",
 			args: args{
-				data:   todo{Id: 1, Description: "test", Details: "a test", Done: false},
+				data:   model.Todo{Id: 1, Description: "test", Details: "a test", Done: false},
 				header: nil,
 				body:   `{"id":1,"description":"test","details":"a test","done":false}`,
 			},
@@ -29,7 +31,7 @@ func TestRespond(t *testing.T) {
 		{
 			name: "single_todo_location_header",
 			args: args{
-				data:   todo{Id: 1, Description: "test", Details: "a test", Done: false},
+				data:   model.Todo{Id: 1, Description: "test", Details: "a test", Done: false},
 				header: []header{{name: "Location", val: "/todo/1"}},
 				body:   `{"id":1,"description":"test","details":"a test","done":false}`,
 			},
@@ -37,7 +39,7 @@ func TestRespond(t *testing.T) {
 		{
 			name: "single_todo_multiple_headers",
 			args: args{
-				data: todo{Id: 1, Description: "test", Details: "a test", Done: false},
+				data: model.Todo{Id: 1, Description: "test", Details: "a test", Done: false},
 				header: []header{
 					{name: "Location", val: "/todo/1"},
 					{name: "Cache-Control", val: "no-cache"},
@@ -49,7 +51,7 @@ func TestRespond(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			respond(rec, tc.data, tc.header...)
+			respond(rec, tc.data, http.StatusOK, tc.header...)
 			res := rec.Result()
 			if res.StatusCode != http.StatusOK {
 				t.Errorf("Want HTTP 200 OK, got %v", rec.Code)
@@ -76,54 +78,54 @@ func TestRespond(t *testing.T) {
 }
 
 func TestBind(t *testing.T) {
-	objTests := []bindTestCase[todo]{
+	objTests := []bindTestCase[model.Todo]{
 		{
 			name: "bind_todo_object",
-			args: bindTestArgs[todo]{
+			args: bindTestArgs[model.Todo]{
 				body:   `{"id":1,"description":"test","details":"a test","done":false}`,
-				target: todo{},
+				target: model.Todo{},
 			},
 			wantErr: false,
 		},
 		{
 			name: "bind_invalid_type",
-			args: bindTestArgs[todo]{
+			args: bindTestArgs[model.Todo]{
 				body:   `{"foo":"fail"}`,
-				target: todo{},
+				target: model.Todo{},
 			},
 			wantErr: true,
 		},
 		{
 			name: "bind_null",
-			args: bindTestArgs[todo]{
+			args: bindTestArgs[model.Todo]{
 				body:   `null`,
-				target: todo{},
+				target: model.Todo{},
 			},
 			wantErr: false,
 		},
 	}
-	sliceTests := []bindTestCase[[]todo]{
+	sliceTests := []bindTestCase[[]model.Todo]{
 		{
 			name: "bind_todo_array",
-			args: bindTestArgs[[]todo]{
+			args: bindTestArgs[[]model.Todo]{
 				body:   `[{"id":1,"description":"test","details":"a test","done":false},{"id":2,"description":"test 2","details":"another test","done":false}]`,
-				target: []todo{},
+				target: []model.Todo{},
 			},
 			wantErr: false,
 		},
 		{
 			name: "bind_empty_array",
-			args: bindTestArgs[[]todo]{
+			args: bindTestArgs[[]model.Todo]{
 				body:   `[]`,
-				target: []todo{},
+				target: []model.Todo{},
 			},
 			wantErr: false,
 		},
 		{
 			name: "bind_invalid_type",
-			args: bindTestArgs[[]todo]{
+			args: bindTestArgs[[]model.Todo]{
 				body:   `{"foo":"fail"}`,
-				target: []todo{},
+				target: []model.Todo{},
 			},
 			wantErr: true,
 		},
