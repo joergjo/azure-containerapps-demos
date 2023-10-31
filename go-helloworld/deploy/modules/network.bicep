@@ -1,12 +1,10 @@
 @description('Specifies the name prefix of all resources.')
-@minLength(5)
-@maxLength(20)
 param namePrefix string
 
 @description('Specifies the location to deploy to.')
 param location string
 
-resource vnet 'Microsoft.Network/virtualNetworks@2021-05-01' = {
+resource vnet 'Microsoft.Network/virtualNetworks@2023-05-01' = {
   name: '${namePrefix}-vnet'
   location: location
   properties: {
@@ -37,7 +35,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2021-05-01' = {
   }
 }
 
-resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2021-02-01' = {
+resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2023-05-01' = {
   name: '${namePrefix}-infra-nsg'
   location: location
   properties: {

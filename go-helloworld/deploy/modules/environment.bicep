@@ -10,7 +10,7 @@ param infrastructureSubnetId string
 var workspaceName = '${namePrefix}-logs'
 var environmentName = '${namePrefix}-env'
 
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: workspaceName
   location: location
   properties: {
@@ -20,7 +20,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-06
   }
 }
 
-resource environment 'Microsoft.App/managedEnvironments@2023-04-01-preview' = {
+resource environment 'Microsoft.App/managedEnvironments@2023-05-02-preview' = {
   name: environmentName
   location: location
   properties: {
