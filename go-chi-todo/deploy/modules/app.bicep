@@ -99,7 +99,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
               type: 'liveness'
               httpGet: {
                 scheme: 'HTTP'
-                path: '/healthz'
+                path: '/healthz/live'
                 port: port
               }
             }
@@ -107,7 +107,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
               type: 'readiness'
               httpGet: {
                 scheme: 'HTTP'
-                path: '/ready'
+                path: '/healthz/ready'
                 port: port
               }
               initialDelaySeconds: 15
