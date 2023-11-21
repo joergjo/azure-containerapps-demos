@@ -54,17 +54,21 @@ db_host=$(az deployment group show \
   --output tsv)
 
 token=$(az account get-access-token --resource-type oss-rdbms --query accessToken --output tsv)
-export PGPASSWORD=$token
+export PGPASSWORD="${token}"
 
 cat << EOF > prepare-db.generated.sql
 SELECT * FROM pgaadauth_create_principal('${identity_upn}', false, false);
 CREATE DATABASE "${database}";
 EOF
 
+# PGX seems to have trouble with Entra ID B2B UPNs, so we use PGUSER instead.
+# psql doesn't have this issue, so we pass the user on the command line.
+export PGUSER="${current_user_upn}"
+
 psql "host=${db_host} user=${current_user_upn} dbname=postgres sslmode=require" \
   -f prepare-db.generated.sql
 
-migrate -path ../migrations -database "pgx://${current_user_upn}:${token}@${db_host}/${database}?sslmode=require" up
+migrate -path ../migrations -database "pgx://${db_host}/${database}?sslmode=require" up
 
 psql "host=${db_host} user=${current_user_upn} dbname=${database} sslmode=require" \
   -c "GRANT ALL on \"todo\" TO \"${identity_upn}\"";
