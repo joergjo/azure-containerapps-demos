@@ -17,6 +17,16 @@ param postgresLogin string
 @secure()
 param postgresLoginPassword string
 
+@description('Specifies the PostgreSQL version.')
+@allowed([
+  '12'
+  '13'
+  '14'
+  '15'
+  '16'
+])
+param postgresVersion string = '15'
+
 @description('Specifies the Azure AD PostgreSQL administrator user principal name.')
 param aadPostgresAdmin string
 
@@ -48,6 +58,7 @@ module postgres 'modules/database.bicep' = {
     postgresSubnetId: network.outputs.databaseSubnetId
     privateDnsZoneId: network.outputs.privateDnsZoneId
     deployDatabase: false
+    version: postgresVersion
   }
 }
 
