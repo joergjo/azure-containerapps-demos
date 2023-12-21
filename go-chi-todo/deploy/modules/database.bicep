@@ -12,8 +12,10 @@ param location string
   '12'
   '13'
   '14'
+  '15'
+  '16'
 ])
-param version string = '14'
+param version string = '15'
 
 @description('Specifies the PostgreSQL administrator login name.')
 @secure()
@@ -56,7 +58,7 @@ var firewallrules = [
   }
 ]
 
-resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-03-01-preview' = {
+resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-06-01-preview' = {
   name: server
   location: location
   sku: {
@@ -90,12 +92,12 @@ resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-03-01-pr
   }
 }
 
-resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2023-03-01-preview' = if (deployDatabase) {
+resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2023-06-01-preview' = if (deployDatabase) {
   name: database
   parent: postgresServer
 }
 
-resource postgresAzureADAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2023-03-01-preview' = {
+resource postgresAzureADAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2023-06-01-preview' = {
   name: aadPostgresAdminObjectID
   parent: postgresServer
   properties: {
@@ -106,7 +108,7 @@ resource postgresAzureADAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/adminis
 }
 
 @batchSize(1)
-resource firewallRules 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2023-03-01-preview' = [for rule in firewallrules: if (deployAsPublic)  {
+resource firewallRules 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2023-06-01-preview' = [for rule in firewallrules: if (deployAsPublic)  {
   name: rule.name
   parent: postgresServer
   properties: {
