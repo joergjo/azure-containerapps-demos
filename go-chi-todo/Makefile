@@ -23,3 +23,6 @@ migrate-docker-down:
 	
 migrate-docker-force:
 	migrate -path $(PWD)/migrations -database "pgx://postgres:pass%40word1@localhost/todo?sslmode=allow" force $(N)
+
+build-image:
+	docker buildx build --platform linux/amd64,linux/arm64 -t $(IMAGE_NAME):$(IMAGE_TAG) --push .
