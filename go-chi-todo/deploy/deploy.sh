@@ -65,13 +65,13 @@ EOF
 # psql doesn't have this issue, so we pass the user on the command line.
 export PGUSER="${current_user_upn}"
 
-psql "host=${db_host} user=${current_user_upn} dbname=postgres sslmode=require" \
+psql "host=${db_host} dbname=postgres sslmode=require" \
   -f prepare-db.generated.sql
 
 migrate -path ../migrations -database "pgx://${db_host}/${database}?sslmode=require" up
 
-psql "host=${db_host} user=${current_user_upn} dbname=${database} sslmode=require" \
-  -c "GRANT ALL on \"todo\" TO \"${identity_upn}\"";
+psql "host=${db_host} dbname=${database} sslmode=require" \
+  -c "GRANT ALL on \"todo\" TO \"${identity_upn}\"; GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO \"${identity_upn}\";"
 
 env_id=$(az deployment group show \
   --resource-group "$resource_group" \
