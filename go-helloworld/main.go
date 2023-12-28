@@ -40,7 +40,12 @@ func (h *hostNameFieldHook) Fire(e *log.Entry) error {
 func newLogger() log.FieldLogger {
 	l := log.New()
 	l.Out = os.Stderr
-	l.SetFormatter(&log.JSONFormatter{})
+	f := log.JSONFormatter{
+		FieldMap: log.FieldMap{
+			log.FieldKeyTime: "timestamp",
+		},
+	}
+	l.SetFormatter(&f)
 
 	host, err := os.Hostname()
 	if err != nil {
