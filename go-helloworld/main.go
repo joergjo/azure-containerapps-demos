@@ -64,7 +64,7 @@ func main() {
 		}
 	}
 
-	mux := &http.ServeMux{}
+	mux := http.NewServeMux()
 	mux.HandleFunc("/hello", hello(l))
 	mux.HandleFunc("/about", about(l, enableAbout))
 	mux.HandleFunc("/", probe(l, "OK"))
