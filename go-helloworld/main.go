@@ -39,10 +39,9 @@ func (h *hostNameFieldHook) Fire(e *log.Entry) error {
 
 func newLogger() log.FieldLogger {
 	l := log.New()
-	l.Out = os.Stdout
+	l.Out = os.Stderr
 	l.SetFormatter(&log.JSONFormatter{})
 
-	rand.Seed(time.Now().Unix())
 	host, err := os.Hostname()
 	if err != nil {
 		l.Warn("Cannot obtain host name")
