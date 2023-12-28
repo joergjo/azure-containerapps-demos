@@ -104,7 +104,7 @@ func about(l log.FieldLogger, enabled bool) http.HandlerFunc {
 			fmt.Fprint(w, msg)
 		} else {
 			l.Warn("About handler is disabled")
-			http.Error(w, "This handler is not implemented. Please update to a newer version if available.", http.StatusNotImplemented)
+			http.Error(w, "This handler is disabled. Please set HELLOWORLD_ENABLE_ABOUT to 'true' to enable.", http.StatusNotImplemented)
 		}
 	}
 }
