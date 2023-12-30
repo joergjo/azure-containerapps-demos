@@ -50,7 +50,7 @@ these in one command: `azd up`.
 
 The Azure storage account that is created by `azd provision` includes a firewall rule to grant access to your local network (i.e., your router's IP address).
 
-You can use the Azure CLI to quickly create test messags and submit them
+You can use the Azure CLI to quickly create test messages and submit them
 to the Azure Queue Storage.
 
 ```bash
