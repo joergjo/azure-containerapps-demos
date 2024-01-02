@@ -11,7 +11,7 @@ var uid = uniqueString(resourceGroup().id)
 var workspaceName = '${namePrefix}${uid}-logs'
 var appInsightsName = '${namePrefix}${uid}-insights'
 
-resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: workspaceName
   location: location
   tags: tags

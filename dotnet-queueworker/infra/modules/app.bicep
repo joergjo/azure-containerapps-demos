@@ -34,12 +34,12 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2021-08-01' existing 
 
 var storageAccountConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${storageAccount.listKeys().keys[0].value};EndpointSuffix=core.windows.net'
 
-resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-07-31-preview' = {
   name: '${name}-mi'
   location: location
 }
 
-resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-01-01-preview' existing = {
+resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-11-01-preview' existing = {
   name: containerRegistryName
 }
 
@@ -55,7 +55,7 @@ resource acrPullAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' 
   }
 }
 
-resource containerApp 'Microsoft.App/containerApps@2023-04-01-preview' = {
+resource containerApp 'Microsoft.App/containerApps@2023-08-01-preview' = {
   name: name
   location: location
   tags: union(tags, { 'azd-service-name': 'queueworker' })

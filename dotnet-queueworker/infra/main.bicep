@@ -118,6 +118,7 @@ module app 'modules/app.bicep' = {
   }
 }
 
+output AZURE_RESOURCE_GROUP string = rg.name
 output AZURE_CONTAINER_ENVIRONMENT_NAME string = environment.outputs.name
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = registry.outputs.loginServer
 output AZURE_CONTAINER_REGISTRY_NAME string = registry.outputs.name

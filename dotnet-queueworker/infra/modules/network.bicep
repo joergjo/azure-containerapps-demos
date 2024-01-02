@@ -11,7 +11,7 @@ var uid = uniqueString(resourceGroup().id)
 var vnetName = '${namePrefix}${uid}-vnet'
 var nsgName = '${namePrefix}${uid}-infra-nsg'
 
-resource vnet 'Microsoft.Network/virtualNetworks@2023-02-01' = {
+resource vnet 'Microsoft.Network/virtualNetworks@2023-06-01' = {
   name: vnetName
   location: location
   tags: tags
@@ -51,7 +51,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-02-01' = {
   }
 }
 
-resource nsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' = {
+resource nsg 'Microsoft.Network/networkSecurityGroups@2023-06-01' = {
   name: nsgName
   location: location
   tags: tags
