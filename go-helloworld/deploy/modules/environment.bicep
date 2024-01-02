@@ -20,7 +20,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
   }
 }
 
-resource environment 'Microsoft.App/managedEnvironments@2023-05-02-preview' = {
+resource environment 'Microsoft.App/managedEnvironments@2023-08-01-preview' = {
   name: environmentName
   location: location
   properties: {
@@ -29,6 +29,9 @@ resource environment 'Microsoft.App/managedEnvironments@2023-05-02-preview' = {
       logAnalyticsConfiguration: {
         customerId: logAnalyticsWorkspace.properties.customerId
         sharedKey: logAnalyticsWorkspace.listKeys().primarySharedKey
+        // See https://github.com/microsoft/azure-container-apps/issues/938
+        // This should be set to true, but so far it doesn't seem to work and loses log messages.
+        dynamicJsonColumns: false
       }
     }
     vnetConfiguration: {

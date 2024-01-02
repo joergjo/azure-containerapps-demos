@@ -7,7 +7,7 @@ param location string = resourceGroup().location
 param appName string
 
 @description('Specifies the Container App\'s image.')
-param image string = 'joergjo/go-helloworld:latest'
+param image string
 
 @description('Specifies the environment variables used by the application.')
 param envVars array = [
@@ -40,7 +40,7 @@ module app 'modules/app.bicep' = {
     name: appName
     location: location
     environmentId: environment.outputs.environmentId
-    image: image
+    image: image != '' ? image : 'joergjo/go-helloworld:latest'
     envVars: envVars
   }
 }
