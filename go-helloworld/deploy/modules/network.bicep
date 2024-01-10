@@ -18,14 +18,6 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-05-01' = {
         name: 'infrastructure'
         properties: {
           addressPrefix: '10.150.0.0/23'
-          delegations: [
-            {
-              name: 'Microsoft.App/environments'
-              properties: {
-                serviceName: 'Microsoft.App/environments'
-              }
-            }
-          ]
           networkSecurityGroup: {
             id: networkSecurityGroup.id
           }

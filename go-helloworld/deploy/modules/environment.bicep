@@ -29,20 +29,12 @@ resource environment 'Microsoft.App/managedEnvironments@2023-08-01-preview' = {
       logAnalyticsConfiguration: {
         customerId: logAnalyticsWorkspace.properties.customerId
         sharedKey: logAnalyticsWorkspace.listKeys().primarySharedKey
-        // See https://github.com/microsoft/azure-container-apps/issues/938
-        // This should be set to true, but so far it doesn't seem to work and loses log messages.
-        dynamicJsonColumns: false
+        dynamicJsonColumns: true
       }
     }
     vnetConfiguration: {
       infrastructureSubnetId: infrastructureSubnetId
     }
-    workloadProfiles: [
-      {
-        name: 'Consumption'
-        workloadProfileType: 'Consumption'
-      }
-    ]
   }
 }
 
