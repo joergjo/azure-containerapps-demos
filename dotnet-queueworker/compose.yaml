@@ -4,7 +4,7 @@ services:
   queue-worker:
     build:
       context: ./src
-      dockerfile: ${DOCKERFILE:-Dockerfile.multiarch}
+      dockerfile: ${DOCKERFILE:-Dockerfile}
     image: ${IMAGE:-joergjo/dotnet-queueworker}
     environment:
       - WorkerOptions__StorageConnectionString=${WorkerOptions__StorageConnectionString}
