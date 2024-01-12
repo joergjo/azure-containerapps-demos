@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-QueueWorker-F6B152E2-1BA8-447F-AFE6-08A2633CE01E</UserSecretsId>
@@ -11,8 +11,8 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Storage.Queues" Version="12.17.1" />
-    <PackageReference Include="Lamar.Microsoft.DependencyInjection" Version="12.1.0" />
+    <PackageReference Include="Lamar.Microsoft.DependencyInjection" Version="13.0.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" Version="2.22.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
   </ItemGroup>
 </Project>
