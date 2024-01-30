@@ -19,7 +19,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
   }
 }
 
-resource environment 'Microsoft.App/managedEnvironments@2023-04-01-preview' = {
+resource environment 'Microsoft.App/managedEnvironments@2023-08-01-preview' = {
   name: '${namePrefix}-env'
   location: location
   properties: {
@@ -42,7 +42,7 @@ resource environment 'Microsoft.App/managedEnvironments@2023-04-01-preview' = {
   }
 }
 
-resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-07-31-preview' = {
   location: location
   name: '${namePrefix}-${uniqueString(resourceGroup().id)}-mi'
 }

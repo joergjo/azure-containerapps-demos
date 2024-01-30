@@ -33,7 +33,7 @@ param ddSite string
 @description('Specifies the Datadog environment tag.')
 param ddEnv string
 
-resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
+resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-07-31-preview' existing = {
   name: identityUPN
 }
 
@@ -108,7 +108,7 @@ var allEnvVars = [
 var secretNames = map(secrets, s => s.name)
 var envVars = filter(allEnvVars, e => (contains(e, 'secretRef') && contains(secretNames, e.secretRef)) || contains(e, 'value'))
 
-resource containerApp 'Microsoft.App/containerApps@2023-04-01-preview' = {
+resource containerApp 'Microsoft.App/containerApps@2023-08-01-preview' = {
   name: name
   location: location
   identity: {
