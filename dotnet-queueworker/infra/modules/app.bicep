@@ -13,9 +13,6 @@ param image string
 @description('Specifies the Storage Account name used for messaging.')
 param storageAccountName string
 
-@description('Specifies the Application Insights connection string.')
-param appInsightsConnectionString string
-
 @description('Specifies the storage queue\'s name.')
 param queueName string
 
@@ -28,7 +25,7 @@ param containerRegistryName string
 @description('Specifies the tags for all resources.')
 param tags object = {}
 
-resource storageAccount 'Microsoft.Storage/storageAccounts@2021-08-01' existing = {
+resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
   name: storageAccountName
 }
 
@@ -55,7 +52,7 @@ resource acrPullAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' 
   }
 }
 
-resource containerApp 'Microsoft.App/containerApps@2023-08-01-preview' = {
+resource containerApp 'Microsoft.App/containerApps@2023-11-02-preview' = {
   name: name
   location: location
   tags: union(tags, { 'azd-service-name': 'queueworker' })
@@ -87,10 +84,6 @@ resource containerApp 'Microsoft.App/containerApps@2023-08-01-preview' = {
           name: 'queue-connection'
           value: storageAccountConnectionString
         }
-        {
-          name: 'appinsights-connection'
-          value: appInsightsConnectionString
-        }
       ]  
     }
     template: {
@@ -99,10 +92,6 @@ resource containerApp 'Microsoft.App/containerApps@2023-08-01-preview' = {
           image: image
           name: name
           env: [
-            {
-              name: 'ApplicationInsights__ConnectionString'
-              secretRef: 'appinsights-connection'
-            }
             {
               name: 'WorkerOptions__StorageConnectionString'
               secretRef: 'queue-connection'
@@ -119,7 +108,6 @@ resource containerApp 'Microsoft.App/containerApps@2023-08-01-preview' = {
               name: 'Logging__Console__DisableColors'
               value: 'true'
             }
-
           ]
           resources: {
             cpu: json('0.5')

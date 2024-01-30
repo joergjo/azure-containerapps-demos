@@ -1,12 +1,12 @@
 targetScope = 'subscription'
 
-@minLength(1)
-@maxLength(64)
-@description('Name of the environment that can be used as part of naming resource convention')
+@minLength(6)
+@maxLength(24)
+@description('Name of the environment.')
 param environmentName string
 
-@minLength(1)
-@description('Primary location for all resources')
+@minLength(6)
+@description('Specifies the location to deploy to.')
 param location string
 
 @description('Specifies the Container App\'s name.')
@@ -28,6 +28,17 @@ param decodeBase64 bool = true
 @secure()
 param clientPublicIpAddress string = ''
 
+@description('Specifies the Honeycomb API key.')
+@secure()
+param honeycombApiKey string = ''
+
+@description('Specifies the Honeycomb dataset for metrics.')
+param honeycombDataset string = ''
+
+@description('Specifies the Honeycomb endpoint. Uses the US instance by default.')
+param honeycombEndpoint string = 'api.honeycomb.io:443'
+
+
 // Tags that should be applied to all resources.
 // 
 // Note that 'azd-service-name' tags should be applied separately to service host resources.
@@ -38,10 +49,10 @@ var tags = {
 }
 
 var defaultAppName = 'queueworker'
-var defaultImage = 'joergjo/dotnet-queueworker:latest'
+var defaultImage = 'joergjo/dotnet-queueworker:8.0'
 var defaultNamePrefix = 'aca'
 
-resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
+resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
   name: environmentName
   location: location
   tags: tags
@@ -98,6 +109,10 @@ module environment 'modules/environment.bicep' = {
     namePrefix: !empty(namePrefix) ? namePrefix : defaultNamePrefix
     infrastructureSubnetId: network.outputs.infraSubnetId
     workspaceName: monitoring.outputs.workspaceName
+    appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
+    honeycombApiKey: honeycombApiKey
+    honeycombDataset: honeycombDataset
+    honeycombEndpoint: honeycombEndpoint
   }
 }
 
@@ -113,7 +128,6 @@ module app 'modules/app.bicep' = {
     decodeBase64: decodeBase64
     storageAccountName: storage.outputs.storageAccountName
     queueName: storage.outputs.queueName
-    appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
     containerRegistryName: registry.outputs.name
   }
 }

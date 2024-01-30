@@ -1,0 +1,45 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        # Note that this must match the service name in Compose
+        endpoint: collector:4317
+
+exporters:
+  otlp:
+    endpoint: "api.honeycomb.io:443" # US instance
+    #endpoint: "api.eu1.honeycomb.io:443" # EU instance
+    headers:
+      "x-honeycomb-team": ${env:HONEYCOMB_API_KEY}
+  # Metrics require a Dataset - see https://docs.honeycomb.io/send-data/opentelemetry/collector/#metrics-and-logs-signals
+  otlp/metrics:
+    endpoint: "api.honeycomb.io:443" # US instance
+    #endpoint: "api.eu1.honeycomb.io:443" # EU instance
+    headers:
+      "x-honeycomb-team": ${env:HONEYCOMB_API_KEY}
+      "x-honeycomb-dataset": ${env:HONEYCOMB_DATASET}
+
+processors:
+  batch:
+
+extensions:
+  health_check:
+
+service:
+  telemetry:
+    logs:
+      level: "debug"
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/metrics]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp]

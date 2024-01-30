@@ -4,7 +4,7 @@ param namePrefix string
 @description('Specifies the location to deploy to.')
 param location string
 
-@description('Indicates whether admin user is enabled')
+@description('Specifies whether the admin user is enabled.')
 param adminUserEnabled bool = true
 
 @description('Specifies the tags for all resources.')
