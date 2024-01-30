@@ -13,9 +13,6 @@ param image string
 @description('Specifies the Storage Account name used for messaging.')
 param storageAccountName string
 
-@description('Specifies the Application Insights connection string.')
-param appInsightsConnectionString string
-
 @description('Specifies the storage queue\'s name.')
 param queueName string
 
@@ -87,10 +84,6 @@ resource containerApp 'Microsoft.App/containerApps@2023-08-01-preview' = {
           name: 'queue-connection'
           value: storageAccountConnectionString
         }
-        {
-          name: 'appinsights-connection'
-          value: appInsightsConnectionString
-        }
       ]  
     }
     template: {
@@ -99,10 +92,6 @@ resource containerApp 'Microsoft.App/containerApps@2023-08-01-preview' = {
           image: image
           name: name
           env: [
-            {
-              name: 'ApplicationInsights__ConnectionString'
-              secretRef: 'appinsights-connection'
-            }
             {
               name: 'WorkerOptions__StorageConnectionString'
               secretRef: 'queue-connection'
@@ -119,7 +108,10 @@ resource containerApp 'Microsoft.App/containerApps@2023-08-01-preview' = {
               name: 'Logging__Console__DisableColors'
               value: 'true'
             }
-
+            {
+              name: 'UseExporter'
+              value: 'otlp'
+            }
           ]
           resources: {
             cpu: json('0.5')

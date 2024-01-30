@@ -7,8 +7,11 @@ param location string
 @description('Specifies the subnet resource ID for the Container App environment.')
 param infrastructureSubnetId string
 
-@description('Specifies the Log Analytics workspace to connect to')
+@description('Specifies the Log Analytics workspace to connect to.')
 param workspaceName string
+
+@description('Specifies the Application Insights connection string.')
+param appInsightsConnectionString string
 
 @description('Specifies the tags for all resources.')
 param tags object = {}
@@ -30,6 +33,17 @@ resource environment 'Microsoft.App/managedEnvironments@2023-08-01-preview' = {
       logAnalyticsConfiguration: {
         customerId: logAnalyticsWorkspace.properties.customerId
         sharedKey: logAnalyticsWorkspace.listKeys().primarySharedKey
+      }
+    }
+    appInsightsConfiguration:{
+      connectionString: appInsightsConnectionString
+    }
+    openTelemetryConfiguration:{
+      tracesConfiguration:{
+        destinations:['appInsights']
+      }
+      logsConfiguration:{
+        destinations:['appInsights']
       }
     }
     vnetConfiguration: {

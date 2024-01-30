@@ -2,11 +2,11 @@ targetScope = 'subscription'
 
 @minLength(1)
 @maxLength(64)
-@description('Name of the environment that can be used as part of naming resource convention')
+@description('Name of the environment.')
 param environmentName string
 
 @minLength(1)
-@description('Primary location for all resources')
+@description('Specifies the location to deploy to.')
 param location string
 
 @description('Specifies the Container App\'s name.')
@@ -98,6 +98,7 @@ module environment 'modules/environment.bicep' = {
     namePrefix: !empty(namePrefix) ? namePrefix : defaultNamePrefix
     infrastructureSubnetId: network.outputs.infraSubnetId
     workspaceName: monitoring.outputs.workspaceName
+    appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
   }
 }
 
@@ -113,7 +114,6 @@ module app 'modules/app.bicep' = {
     decodeBase64: decodeBase64
     storageAccountName: storage.outputs.storageAccountName
     queueName: storage.outputs.queueName
-    appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
     containerRegistryName: registry.outputs.name
   }
 }
