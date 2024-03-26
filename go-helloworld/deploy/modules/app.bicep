@@ -15,7 +15,7 @@ param envVars array
 
 var port = 8000
 
-resource containerApp 'Microsoft.App/containerApps@2023-08-01-preview' = {
+resource containerApp 'Microsoft.App/containerApps@2023-11-02-preview' = {
   name: name
   location: location
   properties: {
