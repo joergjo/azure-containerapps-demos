@@ -17,6 +17,14 @@ param envVars array = [
   }
 ]
 
+module appIdentity 'modules/identity.bicep' = {
+  name: 'appIdentity'
+  params: {
+    namePrefix: appName
+    location: location
+  }
+}
+
 module network 'modules/network.bicep' = {
   name: 'network'
   params: {
@@ -42,6 +50,7 @@ module app 'modules/app.bicep' = {
     environmentId: environment.outputs.environmentId
     image: image != '' ? image : 'joergjo/go-helloworld:latest'
     envVars: envVars
+    identityName: appIdentity.outputs.name
   }
 }
 

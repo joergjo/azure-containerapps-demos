@@ -13,11 +13,24 @@ param image string
 @description('Specifies the environment variables used by the application.')
 param envVars array
 
+@description('Specifies the name of the User-Assigned Managed Identity for the Container App.')
+param identityName string
+
 var port = 8000
+
+resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
+  name: identityName
+}
 
 resource containerApp 'Microsoft.App/containerApps@2023-11-02-preview' = {
   name: name
   location: location
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentity.id}': {}
+    }
+  }
   properties: {
     managedEnvironmentId: environmentId
     configuration: {
