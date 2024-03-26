@@ -70,9 +70,9 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/hello", hello(l))
-	mux.HandleFunc("/about", about(l, enableAbout))
-	mux.HandleFunc("/", probe(l, "OK"))
+	mux.HandleFunc("GET /hello", hello(l))
+	mux.HandleFunc("GET /about", about(l, enableAbout))
+	mux.HandleFunc("GET /", probe(l, "OK"))
 
 	addr := fmt.Sprintf(":%d", *port)
 	s := http.Server{
