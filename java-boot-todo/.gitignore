@@ -40,3 +40,6 @@ azuredeploy.parameters.json
 
 ### Generated SQL files ###
 *.generated.sql
+
+### VS Code ###
+.vscode/
