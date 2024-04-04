@@ -4,7 +4,10 @@
 .vscode
 deploy
 target
-docker-compose*.yaml
+compose*.yaml
 Dockerfile*
 mvnw.cmd
 .sdkmanrc
+media   
+*.md
+*.buildkit
