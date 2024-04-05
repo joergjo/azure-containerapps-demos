@@ -9,20 +9,18 @@ ENV DD_PROFILING_ENABLED=true
 ENV DD_LOGS_ENABLED=true
 ENV DD_TRACE_ENABLED=true
 
-FROM eclipse-temurin:17-jdk-jammy AS build
+FROM maven:3.9-eclipse-temurin-17 AS build
 ARG revision
 WORKDIR /build
-COPY mvnw  .
-COPY .mvn .mvn
 COPY pom.xml .
 COPY src src
-RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -DskipTests -Drevision=${revision} clean package
+RUN --mount=type=cache,target=/root/.m2 mvn -B -DskipTests -Drevision=${revision} -Pdatadog clean package
 
 FROM base AS final
 WORKDIR /app
 COPY --from=build /build/target/java-boot-todo-*.jar java-boot-todo.jar
-COPY --from=datadog/serverless-init:1.0.0 /datadog-init datadog-init
-RUN curl -s -L -o dd-java-agent.jar https://dtdg.co/latest-java-tracer
+COPY --from=datadog/serverless-init:1 /datadog-init datadog-init
+ADD 'https://dtdg.co/latest-java-tracer' dd-java-agent.jar
 ENTRYPOINT ["/app/datadog-init"]
 CMD [ \
     "java", \

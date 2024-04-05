@@ -37,14 +37,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
     	</dependency>
-		<!-- <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-core</artifactId>
-        </dependency>
-    	<dependency>
-      		<groupId>io.micrometer</groupId>
-			<artifactId>micrometer-registry-datadog</artifactId>
-    	</dependency>		 -->
 		<dependency>
 			<groupId>ch.qos.logback.contrib</groupId>
 			<artifactId>logback-json-classic</artifactId>
@@ -81,6 +73,25 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
+
+	<profiles>
+		<profile>
+			<id>datadog</id>
+			<properties>
+				<spring.profile.from.maven>datadog</spring.profile.from.maven>
+			</properties>
+			<dependencies>
+				<dependency>
+					<groupId>io.micrometer</groupId>
+					<artifactId>micrometer-core</artifactId>
+				</dependency>
+				<dependency>
+					<groupId>io.micrometer</groupId>
+					<artifactId>micrometer-registry-datadog</artifactId>
+				</dependency>		
+			</dependencies>
+		</profile>
+	</profiles>
 
 	<build>
 		<plugins>

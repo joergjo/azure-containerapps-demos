@@ -57,6 +57,7 @@ var allSecrets = [
 ]
 
 var secrets = filter(allSecrets, s => !empty(s.value))
+var springProfiles = !empty(ddApiKey)  ? 'datadog,json-logging' : 'json-logging'
 
 var allEnvVars = [
   {
@@ -73,7 +74,7 @@ var allEnvVars = [
   }
   {
     name: 'SPRING_PROFILES_ACTIVE'
-    value: 'json-logging'
+    value: springProfiles
   }
   {
     name: 'AZURE_CLIENT_ID'
