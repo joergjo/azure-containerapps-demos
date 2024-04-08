@@ -140,17 +140,17 @@ without Datadog support. To build a container image with Datadog support, export
 
 ```bash
 cd <path-to-project-directory>
-export DOCKERFILE=Dockerfile.dd.buildkit
+export DOCKERFILE=Dockerfile.dd
 ```
 
 Instead of exporting an environment variable, you can create an `.env` file in the repo's root directory. Docker Compose will evaluate the content of this file by default.
 
 ```bash
 cd <path-to-project-directory>
-echo "DOCKERFILE=Dockerfile.dd.buildkit" > .env
+echo "DOCKERFILE=Dockerfile.dd" > .env
 ```
 
-The [Dockerfile](Dockerfile.dd.buildkit) sets the following Datadog specific environment variables:
+The [Dockerfile](Dockerfile.dd) sets the following Datadog specific environment variables:
 ```Dockerfile
 ARG revision=1.0.0
 ...
@@ -167,7 +167,7 @@ To override the version, export `REVISION`:
 
 ```bash
 cd <path-to-project-directory>
-export DOCKERFILE=Dockerfile.dd.buildkit
+export DOCKERFILE=Dockerfile.dd
 export REVISION=2.0.0
 ```
 
@@ -175,7 +175,7 @@ Or add it to your `.env`file:
 
 ```bash
 cd <path-to-project-directory>
-echo "DOCKERFILE=Dockerfile.dd.buildkit" > .env
+echo "DOCKERFILE=Dockerfile.dd" > .env
 echo "REVISION=2.0.0" >> .env
 ```
 

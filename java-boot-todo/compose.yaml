@@ -4,7 +4,7 @@ services:
   todo-api:
     build:
       context: .
-      dockerfile: ${DOCKERFILE:-Dockerfile.buildkit}
+      dockerfile: ${DOCKERFILE:-Dockerfile}
       args:
         - revision=${REVISION:-1.0.0}
     image: ${IMAGE:-joergjo/java-boot-todo}
