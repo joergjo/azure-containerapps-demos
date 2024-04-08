@@ -51,7 +51,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: ./java-boot-todo
-          file: ./java-boot-todo/Dockerfile.buildkit
+          file: ./java-boot-todo/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -61,7 +61,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: ./java-boot-todo
-          file: ./java-boot-todo/Dockerfile.dd.buildkit
+          file: ./java-boot-todo/Dockerfile.dd
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta-dd.outputs.tags }}
