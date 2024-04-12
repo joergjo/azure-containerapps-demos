@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"math/rand"
@@ -11,6 +12,12 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 var worldTranslations = []string{
@@ -69,10 +76,45 @@ func main() {
 		}
 	}
 
+	ctx := context.Background()
+
+	// Configure a new OTLP exporter using environment variables for sending data to Honeycomb over gRPC
+	client := otlptracegrpc.NewClient()
+	exp, err := otlptrace.New(ctx, client)
+	if err != nil {
+		l.Fatalf("failed to initialize exporter: %e", err)
+	}
+
+	// Create a new tracer provider with a batch span processor and the otlp exporter
+	tp := trace.NewTracerProvider(
+		trace.WithBatcher(exp),
+	)
+
+	// Handle shutdown to ensure all sub processes are closed correctly and telemetry is exported
+	defer func() {
+		if err := exp.Shutdown(ctx); err != nil {
+			l.Warnf("failed to shutdown exporter: %e", err)
+		}
+		if err := tp.Shutdown(ctx); err != nil {
+			l.Warnf("failed to shutdown tracer provider: %e", err)
+		}
+	}()
+
+	// Register the global Tracer provider
+	otel.SetTracerProvider(tp)
+
+	// Register the W3C trace context and baggage propagators so data is propagated across services/processes
+	otel.SetTextMapPropagator(
+		propagation.NewCompositeTextMapPropagator(
+			propagation.TraceContext{},
+			propagation.Baggage{},
+		),
+	)
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /hello", hello(l))
-	mux.HandleFunc("GET /about", about(l, enableAbout))
-	mux.HandleFunc("GET /", probe(l, "OK"))
+	mux.Handle("GET /hello", hello(l))
+	mux.Handle("GET /about", about(l, enableAbout))
+	mux.Handle("GET /", probe(l, "OK"))
 
 	addr := fmt.Sprintf(":%d", *port)
 	s := http.Server{
@@ -90,18 +132,19 @@ func main() {
 	}
 }
 
-func hello(l log.FieldLogger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func hello(l log.FieldLogger) http.Handler {
+	h := func(w http.ResponseWriter, r *http.Request) {
 		i := rand.Intn(len(worldTranslations))
 		msg := fmt.Sprintf("Hello %s!", worldTranslations[i])
 		l.Printf("Sending %q", msg)
 		w.Header().Set("Content-Type", "text/plain")
 		fmt.Fprint(w, msg)
 	}
+	return otelhttp.NewHandler(http.HandlerFunc(h), "hello")
 }
 
-func about(l log.FieldLogger, enabled bool) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func about(l log.FieldLogger, enabled bool) http.Handler {
+	h := func(w http.ResponseWriter, r *http.Request) {
 		if enabled {
 			msg := fmt.Sprintf("Built with %s", runtime.Version())
 			l.Printf("Sending %q", msg)
@@ -112,12 +155,58 @@ func about(l log.FieldLogger, enabled bool) http.HandlerFunc {
 			http.Error(w, "This handler is disabled. Please set HELLOWORLD_ENABLE_ABOUT to 'true' to enable.", http.StatusNotImplemented)
 		}
 	}
+	return otelhttp.NewHandler(http.HandlerFunc(h), "about")
 }
 
-func probe(l log.FieldLogger, msg string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func probe(l log.FieldLogger, msg string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		l.Printf("Sending %q", msg)
 		w.Header().Set("Content-Type", "text/plain")
 		fmt.Fprint(w, msg)
-	}
+	})
 }
+
+// func main2() {
+// 	ctx := context.Background()
+
+// 	// Configure a new OTLP exporter using environment variables for sending data to Honeycomb over gRPC
+// 	client := otlptracegrpc.NewClient()
+// 	exp, err := otlptrace.New(ctx, client)
+// 	if err != nil {
+// 		log.Fatalf("failed to initialize exporter: %e", err)
+// 	}
+
+// 	// Create a new tracer provider with a batch span processor and the otlp exporter
+// 	tp := trace.NewTracerProvider(
+// 		trace.WithBatcher(exp),
+// 	)
+
+// 	// Handle shutdown to ensure all sub processes are closed correctly and telemetry is exported
+// 	defer func() {
+// 		_ = exp.Shutdown(ctx)
+// 		_ = tp.Shutdown(ctx)
+// 	}()
+
+// 	// Register the global Tracer provider
+// 	otel.SetTracerProvider(tp)
+
+// 	// Register the W3C trace context and baggage propagators so data is propagated across services/processes
+// 	otel.SetTextMapPropagator(
+// 		propagation.NewCompositeTextMapPropagator(
+// 			propagation.TraceContext{},
+// 			propagation.Baggage{},
+// 		),
+// 	)
+
+// 	// Implement an HTTP handler func to be instrumented
+// 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 		fmt.Fprintf(w, "Hello, World")
+// 	})
+
+// 	// Setup handler instrumentation
+// 	wrappedHandler := otelhttp.NewHandler(handler, "hello")
+// 	http.Handle("/hello", wrappedHandler)
+
+// 	// Start web server
+// 	log.Fatal(http.ListenAndServe(":3030", nil))
+// }
