@@ -9,7 +9,6 @@ param location string
 @description('Specifies the name of the private DNS zone.')
 param privateDnsZoneName string = '${namePrefix}.postgres.database.azure.com'
 
-
 @description('Specifies whether a private DNS zone will be deployed')
 param deployDnsZone bool = true
 
@@ -36,7 +35,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-06-01' = {
             }
           ]
           networkSecurityGroup: {
-            id: networkSecurityGroup.id
+            id: containerAppsNsg.id
           }
         }
       }
@@ -52,13 +51,16 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-06-01' = {
               }
             }
           ]
+          networkSecurityGroup: {
+            id: postgresNsg.id
+          }
         }
       }
     ]
   }
 }
 
-resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2023-06-01' = {
+resource containerAppsNsg 'Microsoft.Network/networkSecurityGroups@2023-06-01' = {
   name: '${namePrefix}-infra-nsg'
   location: location
   properties: {
@@ -87,6 +89,28 @@ resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2023-06-0
           sourcePortRange: '*'
           sourceAddressPrefix: '*'
           destinationAddressPrefix: '*'
+        }
+      }
+    ]
+  }
+}
+
+resource postgresNsg 'Microsoft.Network/networkSecurityGroups@2023-04-01' = {
+  name: '${namePrefix}-postgres-nsg'
+  location: location
+  properties: {
+    securityRules: [
+      {
+        name: 'AllowAzureActiveDirectoryOutbound'
+        properties: {
+          priority: 1000
+          access: 'Allow'
+          direction: 'Outbound'
+          protocol: '*'
+          sourceAddressPrefix: 'VirtualNetwork'
+          sourcePortRange: '*'
+          destinationAddressPrefix: 'AzureActiveDirectory'
+          destinationPortRange: '*'
         }
       }
     ]
