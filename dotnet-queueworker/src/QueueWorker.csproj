@@ -18,5 +18,6 @@
     <PackageReference Include="OpenTelemetry.Exporter.Zipkin" Version="1.8.1" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.8.1" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.8.1" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.8.0" />
   </ItemGroup>
 </Project>

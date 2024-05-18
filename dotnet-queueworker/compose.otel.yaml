@@ -6,3 +6,17 @@ services:
       - "4317:4317"
       - "4318:4318"
     restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - "--enable-feature=otlp-write-receiver"
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--log.level=debug"
+    ports:
+      - "9090:9090"
+    volumes:
+      - type: bind
+        source: ./config/prometheus.yml
+        target: /etc/prometheus/prometheus.yml
+    restart: unless-stopped

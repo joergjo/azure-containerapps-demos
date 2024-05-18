@@ -1,6 +1,7 @@
 using System.Text;
 using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
+using static QueueWorker.Telemetry; 
 
 namespace QueueWorker;
 
@@ -34,6 +35,7 @@ public class Worker : BackgroundService
                 var body = _decodeBase64
                     ? Encoding.UTF8.GetString(Convert.FromBase64String(message.Body.ToString()))
                     : message.Body.ToString();
+                MessagesReceivedCounter.Add(1);
                 _logger.LogInformation(
                     "Message received: [{MessageId}] {MessageBody}", message.MessageId, body);
             }

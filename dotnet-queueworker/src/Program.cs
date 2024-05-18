@@ -1,8 +1,11 @@
 using Azure.Storage.Queues;
 using Lamar.Microsoft.DependencyInjection;
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using QueueWorker;
+using static QueueWorker.Telemetry;
 
 var host = Host.CreateDefaultBuilder(args)
     .UseLamar()
@@ -13,8 +16,7 @@ var host = Host.CreateDefaultBuilder(args)
             .ConfigureResource(resource => resource.AddService(hostContext.HostingEnvironment.ApplicationName))
             .WithTracing(builder =>
             {
-                builder.AddSource("Azure.*");
-                builder.AddSource(nameof(QueueWorker));
+                builder.AddSource("Azure.*", Telemetry.WorkerActivitySource.Name);
                 builder.AddHttpClientInstrumentation();
                 var exporter = hostContext.Configuration.GetValue("OpenTelemetry:Exporter", defaultValue: "console")!
                     .ToLowerInvariant();
@@ -34,6 +36,18 @@ var host = Host.CreateDefaultBuilder(args)
                         builder.AddConsoleExporter();
                         break;
                 }
+            })
+            .WithMetrics(metrics =>
+            {
+                metrics.AddHttpClientInstrumentation();
+                metrics.AddRuntimeInstrumentation();
+                metrics.AddMeter(WorkerMeter.Name);
+                metrics.AddOtlpExporter((exporterOptions, metricReaderOptions) =>
+                {
+                    exporterOptions.Endpoint = new Uri("http://localhost:9090/api/v1/otlp/v1/metrics");
+                    exporterOptions.Protocol = OtlpExportProtocol.HttpProtobuf;
+                    metricReaderOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = 1000;
+                });
             });
         services.AddSingleton(_ =>
         {
