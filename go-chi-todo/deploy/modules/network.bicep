@@ -13,7 +13,7 @@ param privateDnsZoneName string = '${namePrefix}.postgres.database.azure.com'
 @description('Specifies whether a private DNS zone will be deployed')
 param deployDnsZone bool = true
 
-resource vnet 'Microsoft.Network/virtualNetworks@2023-04-01' = {
+resource vnet 'Microsoft.Network/virtualNetworks@2023-11-01' = {
   name: '${namePrefix}-vnet'
   location: location
   properties: {
@@ -36,12 +36,12 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-04-01' = {
             }
           ]
           networkSecurityGroup: {
-            id: networkSecurityGroup.id
+            id: infraNsg.id
           }
         }
       }
       {
-        name: 'postgres-delegated'
+        name: 'postgres'
         properties: {
           addressPrefix: '10.150.2.0/24'
           delegations: [
@@ -52,13 +52,16 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-04-01' = {
               }
             }
           ]
+          networkSecurityGroup: {
+            id: postgresNsg.id
+          }
         }
       }
     ]
   }
 }
 
-resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2023-04-01' = {
+resource infraNsg 'Microsoft.Network/networkSecurityGroups@2023-11-01' = {
   name: '${namePrefix}-infra-nsg'
   location: location
   properties: {
@@ -89,6 +92,29 @@ resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2023-04-0
           destinationAddressPrefix: '*'
         }
       }
+    ]
+  }
+}
+
+resource postgresNsg 'Microsoft.Network/networkSecurityGroups@2023-04-01' = {
+  name: '${namePrefix}-pgsql-nsg'
+  location: location
+  properties: {
+    securityRules: [
+      {
+        name: 'AllowAzureActiveDirectoryOutbound'
+        properties: {
+          priority: 1000
+          access: 'Allow'
+          direction: 'Outbound'
+          protocol: '*'
+          sourceAddressPrefix: 'VirtualNetwork'
+          sourcePortRange: '*'
+          destinationAddressPrefix: 'AzureActiveDirectory'
+          destinationPortRange: '*'
+        }
+      }
+
     ]
   }
 }
