@@ -4,8 +4,8 @@ go 1.21
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.12.0
-	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.6.0
-	github.com/go-chi/chi/v5 v5.0.12
+	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.7.0
+	github.com/go-chi/chi/v5 v5.0.14
 	github.com/jackc/pgx/v5 v5.6.0
 )
 
