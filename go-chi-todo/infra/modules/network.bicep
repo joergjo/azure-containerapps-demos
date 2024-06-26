@@ -108,7 +108,7 @@ resource postgresNsg 'Microsoft.Network/networkSecurityGroups@2023-04-01' = {
           access: 'Allow'
           direction: 'Outbound'
           protocol: '*'
-          sourceAddressPrefix: 'VirtualNetwork'
+          sourceAddressPrefix: '*'
           sourcePortRange: '*'
           destinationAddressPrefix: 'AzureActiveDirectory'
           destinationPortRange: '*'
