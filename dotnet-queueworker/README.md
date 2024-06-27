@@ -2,7 +2,7 @@
 
 ## About
 
-This application is a [.NET 6 worker service](https://learn.microsoft.com/en-us/dotnet/core/extensions/workers?pivots=dotnet-6-0)
+This application is a [.NET 8 worker service](https://learn.microsoft.com/en-us/dotnet/core/extensions/workers?pivots=dotnet-6-0)
 that reads messages from an [Azure Queue Storage](https://learn.microsoft.com/en-us/azure/storage/queues/storage-queues-introduction)
 and logs them. The service can be deployed as an [Azure Container App](https://learn.microsoft.com/en-us/azure/container-apps/)
 and makes use of [KEDA to scale to zero](https://learn.microsoft.com/en-us/azure/container-apps/scale-app?pivots=azure-cli)
