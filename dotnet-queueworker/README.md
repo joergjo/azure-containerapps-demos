@@ -5,8 +5,10 @@
 This application is a [.NET 8 worker service](https://learn.microsoft.com/en-us/dotnet/core/extensions/workers?pivots=dotnet-6-0)
 that reads messages from an [Azure Queue Storage](https://learn.microsoft.com/en-us/azure/storage/queues/storage-queues-introduction)
 and logs them. The service can be deployed as an [Azure Container App](https://learn.microsoft.com/en-us/azure/container-apps/)
-and makes use of [KEDA to scale to zero](https://learn.microsoft.com/en-us/azure/container-apps/scale-app?pivots=azure-cli)
-if there are no more messages to process.
+and uses [KEDA to scale to zero](https://learn.microsoft.com/en-us/azure/container-apps/scale-app?pivots=azure-cli) if there are no more messages to process.
+The application uses [OpenTelemetry](https://opentelemetry.io) to send telemetry data 
+to either [Azure Monitor](https://learn.microsoft.com/en-us/azure/azure-monitor/) or
+any APM tool that offers an OTLP endpoint such as Honeycomb.
 
 ## Prerequisites
 

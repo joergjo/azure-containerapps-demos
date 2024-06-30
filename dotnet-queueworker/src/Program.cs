@@ -1,6 +1,7 @@
+using System.Diagnostics;
 using Azure.Storage.Queues;
 using Lamar.Microsoft.DependencyInjection;
-using OpenTelemetry.Exporter;
+using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -13,47 +14,35 @@ var host = Host.CreateDefaultBuilder(args)
     {
         services.AddHostedService<Worker>();
         services.AddOpenTelemetry()
-            .ConfigureResource(resource => resource.AddService(hostContext.HostingEnvironment.ApplicationName))
-            .WithTracing(builder =>
+            .ConfigureResource(resource => resource.AddService(ServiceName))
+            .UseOtlpExporter()
+            .WithTracing(config =>
             {
-                builder.AddSource("Azure.*", Telemetry.WorkerActivitySource.Name);
-                builder.AddHttpClientInstrumentation();
-                var exporter = hostContext.Configuration.GetValue("OpenTelemetry:Exporter", defaultValue: "console")!
-                    .ToLowerInvariant();
-                switch (exporter)
+                config.AddSource("Azure.*", Telemetry.WorkerActivitySource.Name);
+                config.AddSource(WorkerActivitySource.Name);
+                config.AddHttpClientInstrumentation(http =>
                 {
-                    case "otlp":
-                        builder.AddOtlpExporter();
-                        break;
-                    case "zipkin":
-                        builder.AddZipkinExporter(zipkinOptions =>
-                        {
-                            zipkinOptions.Endpoint = new Uri(hostContext.Configuration.GetValue("Zipkin:Endpoint",
-                                defaultValue: "http://localhost:9411/api/v2/spans")!);
-                        });
-                        break;
-                    default:
-                        builder.AddConsoleExporter();
-                        break;
-                }
-            })
-            .WithMetrics(metrics =>
-            {
-                metrics.AddHttpClientInstrumentation();
-                metrics.AddRuntimeInstrumentation();
-                metrics.AddMeter(WorkerMeter.Name);
-                metrics.AddOtlpExporter((exporterOptions, metricReaderOptions) =>
-                {
-                    exporterOptions.Endpoint = new Uri("http://localhost:9090/api/v1/otlp/v1/metrics");
-                    exporterOptions.Protocol = OtlpExportProtocol.HttpProtobuf;
-                    metricReaderOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = 1000;
+                    // See https://github.com/Azure/azure-sdk-for-net/blob/main/sdk/core/Azure.Core/samples/Diagnostics.md#avoiding-double-collection-of-http-activities
+                    http.FilterHttpRequestMessage = _ => Activity.Current?.Parent?.Source.Name != "Azure.Core.Http";
                 });
+            })
+            .WithMetrics(config =>
+            {
+                config.AddHttpClientInstrumentation();
+                config.AddRuntimeInstrumentation();
+                config.AddMeter(WorkerMeter.Name);
             });
         services.AddSingleton(_ =>
         {
             var connectionString = hostContext.Configuration.GetValue<string>("WorkerOptions:StorageConnectionString");
             var queueName = hostContext.Configuration.GetValue<string>("WorkerOptions:QueueName");
             return new QueueClient(connectionString, queueName);
+        });
+        services.AddSingleton(_ =>
+        {
+            var decodeBase64 = hostContext.Configuration.GetValue("WorkerOptions:DecodeBase64", true);
+            IBodyDecoder decoder = decodeBase64 ? new Base64BodyDecoder() : new IdentityBodyDecoder();
+            return decoder;
         });
     })
     .Build();

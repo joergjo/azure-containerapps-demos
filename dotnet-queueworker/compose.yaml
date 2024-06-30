@@ -1,5 +1,7 @@
 services:
   queue-worker:
+    profiles:
+      - all
     build:
       context: ./src
       dockerfile: ${DOCKERFILE:-Dockerfile}
@@ -8,5 +10,18 @@ services:
       - WorkerOptions__StorageConnectionString=${WorkerOptions__StorageConnectionString}
       - WorkerOptions__QueueName=${WorkerOptions__QueueName:-dotnet-queueworker}
       - WorkerOptions__DecodeBase64=${WorkerOptions__DecodeBase64:-true}
-      - ApplicationInsights__ConnectionString=${ApplicationInsights__ConnectionString}
       - Logging__Console__DisableColors=true
+
+  collector:
+    image: otel/opentelemetry-collector:latest
+    command: ["--config=/conf/collector-config.yaml"]
+    ports:
+      - "4317:4317"
+    environment:
+      - HONEYCOMB_API_KEY=${HONEYCOMB_API_KEY}
+    volumes:
+      - type: bind
+        source: ./config/collector.honeycomb.yaml
+        target: /conf/collector-config.yaml
+        read_only: true
+    restart: unless-stopped

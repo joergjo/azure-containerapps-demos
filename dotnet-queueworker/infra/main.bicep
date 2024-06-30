@@ -1,11 +1,11 @@
 targetScope = 'subscription'
 
-@minLength(1)
-@maxLength(64)
+@minLength(6)
+@maxLength(24)
 @description('Name of the environment.')
 param environmentName string
 
-@minLength(1)
+@minLength(6)
 @description('Specifies the location to deploy to.')
 param location string
 
@@ -28,6 +28,17 @@ param decodeBase64 bool = true
 @secure()
 param clientPublicIpAddress string = ''
 
+@description('Specifies the Honeycomb API key.')
+@secure()
+param honeycombApiKey string = ''
+
+@description('Specifies the Honeycomb dataset for metrics.')
+param honeycombDataset string = ''
+
+@description('Specifies the Honeycomb endpoint. Uses the US instance by default.')
+param honeycombEndpoint string = 'api.honeycomb.io:443'
+
+
 // Tags that should be applied to all resources.
 // 
 // Note that 'azd-service-name' tags should be applied separately to service host resources.
@@ -38,10 +49,10 @@ var tags = {
 }
 
 var defaultAppName = 'queueworker'
-var defaultImage = 'joergjo/dotnet-queueworker:latest'
+var defaultImage = 'joergjo/dotnet-queueworker:8.0'
 var defaultNamePrefix = 'aca'
 
-resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
+resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
   name: environmentName
   location: location
   tags: tags
@@ -99,6 +110,9 @@ module environment 'modules/environment.bicep' = {
     infrastructureSubnetId: network.outputs.infraSubnetId
     workspaceName: monitoring.outputs.workspaceName
     appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
+    honeycombApiKey: honeycombApiKey
+    honeycombDataset: honeycombDataset
+    honeycombEndpoint: honeycombEndpoint
   }
 }
 

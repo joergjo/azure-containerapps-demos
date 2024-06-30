@@ -9,19 +9,20 @@ public class Worker : BackgroundService
 {
     private readonly ILogger<Worker> _logger;
     private readonly QueueClient _queueClient;
-    private readonly bool _decodeBase64;
+    private readonly IBodyDecoder _decoder;
 
-    public Worker(QueueClient queueClient, IConfiguration configuration, ILogger<Worker> logger)
+    public Worker(QueueClient queueClient, IBodyDecoder decoder, ILogger<Worker> logger)
     {
         _queueClient = queueClient;
         _logger = logger;
-        _decodeBase64 = configuration.GetValue("WorkerOptions:DecodeBase64", true);
+        _decoder = decoder;
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
+            using var activity = WorkerActivitySource.StartActivity("execute");
             try
             {
                 QueueMessage message = await _queueClient.ReceiveMessageAsync(cancellationToken: cancellationToken);
@@ -32,12 +33,10 @@ public class Worker : BackgroundService
                 }
 
                 await _queueClient.DeleteMessageAsync(message.MessageId, message.PopReceipt, cancellationToken);
-                var body = _decodeBase64
-                    ? Encoding.UTF8.GetString(Convert.FromBase64String(message.Body.ToString()))
-                    : message.Body.ToString();
                 MessagesReceivedCounter.Add(1);
+                var text = _decoder.Decode(message.Body);
                 _logger.LogInformation(
-                    "Message received: [{MessageId}] {MessageBody}", message.MessageId, body);
+                    "Message received: [{MessageId}] {MessageBody}", message.MessageId, text);
             }
             catch (OperationCanceledException)
             {

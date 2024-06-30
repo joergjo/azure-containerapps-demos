@@ -19,7 +19,7 @@ param clientPublicIpAddress string
 
 var storageAccountName = '${length(namePrefix) <=11 ? namePrefix : substring(namePrefix, 0, 11)}${uniqueString(resourceGroup().id)}'
 
-resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
+resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   name: storageAccountName
   location: location
   tags: tags
@@ -48,12 +48,12 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   }
 }
 
-resource queueService 'Microsoft.Storage/storageAccounts/queueServices@2023-01-01' = {
+resource queueService 'Microsoft.Storage/storageAccounts/queueServices@2023-05-01' = {
   name: 'default'
   parent: storageAccount
 }
 
-resource workerQueue 'Microsoft.Storage/storageAccounts/queueServices/queues@2023-01-01' = {
+resource workerQueue 'Microsoft.Storage/storageAccounts/queueServices/queues@2023-05-01' = {
   name: queueName
   parent: queueService
 }

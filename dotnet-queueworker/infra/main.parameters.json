@@ -10,6 +10,12 @@
       },
       "clientPublicIpAddress": {
         "value": "${CLIENT_PUBLIC_IP}"
+      },
+      "honeycombApiKey": {
+        "value": "${HONEYCOMB_API_KEY}"
+      },
+      "honeycombDataset": {
+        "value": "${HONEYCOMB_DATASET}"
       }
     }
 }
