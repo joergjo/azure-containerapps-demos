@@ -1,5 +1,4 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
-
 name: dotnet-queueworker
 hooks:
   preprovision:
@@ -8,6 +7,11 @@ hooks:
       run: |
         client_ip="$(curl -s 'https://api.ipify.org?format=text')"
         azd env set CLIENT_PUBLIC_IP $client_ip
+    windows:
+      shell: pwsh
+      run: |
+        $clientIp = (Invoke-WebRequest -Uri 'https://api.ipify.org?format=text').Content
+        azd env set CLIENT_PUBLIC_IP $clientIp
 services:
   queueworker:
     project: ./src
