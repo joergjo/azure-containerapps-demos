@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Storage.Queues" Version="12.18.0" />
+    <PackageReference Include="Azure.Storage.Queues" Version="12.19.1" />
     <PackageReference Include="Lamar.Microsoft.DependencyInjection" Version="13.0.4" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
     <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.9.0" />
