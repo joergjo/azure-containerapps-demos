@@ -1,7 +1,10 @@
+volumes:
+  queue-storage:
+
 services:
   queue-worker:
     profiles:
-      - all
+      - "all"
     build:
       context: ./src
       dockerfile: ${DOCKERFILE:-Dockerfile}
@@ -19,9 +22,24 @@ services:
       - "4317:4317"
     environment:
       - HONEYCOMB_API_KEY=${HONEYCOMB_API_KEY}
+      - HONEYCOMB_DATASET=${HONEYCOMB_DATASET}
     volumes:
       - type: bind
         source: ./config/collector.honeycomb.yaml
         target: /conf/collector-config.yaml
         read_only: true
     restart: unless-stopped
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    profiles:
+      - "all"
+      - "dev"
+    restart: always
+    # We expose all ports to make it easier to connect with Azure Storage Explorer
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10001"
+    volumes:
+      - queue-storage:/data

@@ -44,6 +44,15 @@ var host = Host.CreateDefaultBuilder(args)
             IBodyDecoder decoder = decodeBase64 ? new Base64BodyDecoder() : new IdentityBodyDecoder();
             return decoder;
         });
+        var useInitializer = hostContext.Configuration.GetValue("WorkerOptions:InitializeQueue", false);
+        if (useInitializer)
+        {
+            services.AddSingleton<IQueueLifecycle, CreateIfNotExistsQueueLifecycle>();
+        }
+        else
+        {
+            services.AddSingleton<IQueueLifecycle, NoopQueueLifecycle>();
+        }
     })
     .Build();
 
