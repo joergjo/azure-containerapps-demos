@@ -59,7 +59,6 @@ to the Azure Queue Storage.
 name=<storage_account_name>
 msg=$(echo 'Hello World' | base64)
 conn_str=$(az storage account show-connection-string -n $name --query connectionString -o tsv)
-az storage message put --account-name $name -q queueworker --content $msg --connection-string $conn_str
 for i in {1..10}; do az storage message put --account-name $name -q queueworker --content $msg --connection-string $conn_str; done
 ```
 
