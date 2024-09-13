@@ -9,7 +9,7 @@ param location string
 @description('Specifies the subnet resource ID for the Container App environment.')
 param infrastructureSubnetId string
 
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: '${namePrefix}-logs'
   location: location
   properties: {
@@ -19,7 +19,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
   }
 }
 
-resource environment 'Microsoft.App/managedEnvironments@2023-08-01-preview' = {
+resource environment 'Microsoft.App/managedEnvironments@2024-03-01' = {
   name: '${namePrefix}-env'
   location: location
   properties: {

@@ -12,7 +12,7 @@ param privateDnsZoneName string = '${namePrefix}.postgres.database.azure.com'
 @description('Specifies whether a private DNS zone will be deployed')
 param deployDnsZone bool = true
 
-resource vnet 'Microsoft.Network/virtualNetworks@2023-06-01' = {
+resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
   name: '${namePrefix}-vnet'
   location: location
   properties: {
@@ -60,7 +60,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-06-01' = {
   }
 }
 
-resource containerAppsNsg 'Microsoft.Network/networkSecurityGroups@2023-06-01' = {
+resource containerAppsNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
   name: '${namePrefix}-infra-nsg'
   location: location
   properties: {
@@ -95,7 +95,7 @@ resource containerAppsNsg 'Microsoft.Network/networkSecurityGroups@2023-06-01' =
   }
 }
 
-resource postgresNsg 'Microsoft.Network/networkSecurityGroups@2023-04-01' = {
+resource postgresNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
   name: '${namePrefix}-postgres-nsg'
   location: location
   properties: {
