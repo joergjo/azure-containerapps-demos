@@ -105,6 +105,9 @@ resource postgresAzureADAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/adminis
     principalType: 'User'
     tenantId: subscription().tenantId
   }
+  dependsOn: [
+    firewallRules
+  ]
 }
 
 @batchSize(1)
