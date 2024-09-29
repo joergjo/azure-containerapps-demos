@@ -152,7 +152,7 @@ func (ts *TodoStore) Create(ctx context.Context, item model.Todo) (model.Todo, e
 func (ts *TodoStore) Update(ctx context.Context, item model.Todo) (model.Todo, error) {
 	tag, err := ts.pool.Exec(
 		ctx,
-		`UPDATE todo SET description = $1, details = $2, done =$3 where id =$4`,
+		`UPDATE todo SET description = $1, details = $2, done = $3 where id = $4`,
 		item.Description,
 		item.Details,
 		item.Done,
