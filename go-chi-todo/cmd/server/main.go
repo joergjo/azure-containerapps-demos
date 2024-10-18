@@ -27,10 +27,10 @@ func main() {
 	connString := os.Getenv("TODO_CONN_STRING")
 	listenAddr := os.Getenv("TODO_LISTEN_ADDR")
 
-	run(listenAddr, connString, debug)
+	os.Exit(run(listenAddr, connString, debug))
 }
 
-func run(listenAddr string, connString string, debug bool) {
+func run(listenAddr string, connString string, debug bool) int {
 	slog.SetDefault(slog.New(log.NewStructured(os.Stderr, debug)))
 
 	if connString == "" {
@@ -44,7 +44,7 @@ func run(listenAddr string, connString string, debug bool) {
 	store, err := postgres.NewStore(context.Background(), connString)
 	if err != nil {
 		slog.Error("initializing data store", log.ErrorKey, err)
-		os.Exit(1)
+		return 1
 	}
 
 	r := router.NewMux(store)
@@ -69,6 +69,7 @@ func run(listenAddr string, connString string, debug bool) {
 	defer cancel()
 	store.Close(ctx)
 	slog.Info("shutdown complete")
+	return 0
 }
 
 func shutdown(ctx context.Context, s *http.Server, done chan struct{}) {
