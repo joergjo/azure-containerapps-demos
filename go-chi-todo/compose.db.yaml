@@ -3,7 +3,7 @@ volumes:
 
 services:
   todo-db:
-    image: postgres:${POSTGRES_TAG:-15-alpine}
+    image: postgres:${POSTGRES_TAG:-16-alpine}
     ports:
       - "5432:5432"
     volumes:
