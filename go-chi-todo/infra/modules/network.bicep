@@ -13,7 +13,7 @@ param privateDnsZoneName string = '${namePrefix}.postgres.database.azure.com'
 @description('Specifies whether a private DNS zone will be deployed')
 param deployDnsZone bool = true
 
-resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
+resource vnet 'Microsoft.Network/virtualNetworks@2024-05-01' = {
   name: '${namePrefix}-vnet'
   location: location
   properties: {
@@ -61,7 +61,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
   }
 }
 
-resource infraNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
+resource infraNsg 'Microsoft.Network/networkSecurityGroups@2024-05-01' = {
   name: '${namePrefix}-infra-nsg'
   location: location
   properties: {
@@ -96,7 +96,7 @@ resource infraNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
   }
 }
 
-resource postgresNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
+resource postgresNsg 'Microsoft.Network/networkSecurityGroups@2024-05-01' = {
   name: '${namePrefix}-pgsql-nsg'
   location: location
   properties: {
@@ -119,12 +119,12 @@ resource postgresNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
   }
 }
 
-resource privateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = if (deployDnsZone) {
+resource privateDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = if (deployDnsZone) {
   name: privateDnsZoneName
   location: 'global'
 }
 
-resource privateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = if (deployDnsZone) {
+resource privateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = if (deployDnsZone) {
   parent: privateDnsZone
   name: '${vnet.name}-link'
   location: 'global'
