@@ -15,7 +15,7 @@ param location string
   '15'
   '16'
 ])
-param version string = '15'
+param version string = '16'
 
 @description('Specifies the PostgreSQL administrator login name.')
 @secure()
