@@ -22,7 +22,7 @@ resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-
   name: identityName
 }
 
-resource containerApp 'Microsoft.App/containerApps@2023-11-02-preview' = {
+resource containerApp 'Microsoft.App/containerApps@2024-10-02-preview' = {
   name: name
   location: location
   identity: {

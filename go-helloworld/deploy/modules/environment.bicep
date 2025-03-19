@@ -20,7 +20,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09
   }
 }
 
-resource environment 'Microsoft.App/managedEnvironments@2023-11-02-preview' = {
+resource environment 'Microsoft.App/managedEnvironments@2024-10-02-preview' = {
   name: environmentName
   location: location
   properties: {
