@@ -56,33 +56,35 @@ func run(listenAddr string, connString string, debug bool) int {
 		IdleTimeout:       120 * time.Second,
 	}
 
-	done := make(chan struct{})
-	go shutdown(context.Background(), &s, done)
-
+	errC := make(chan error, 1)
 	slog.Info(fmt.Sprintf("starting server, listening on %s", listenAddr))
-	err = s.ListenAndServe()
-	slog.Info("waiting for shutdown to complete")
-	<-done
-	slog.Error("server has shut down", log.ErrorKey, err)
+	go func() {
+		errC <- s.ListenAndServe()
+	}()
+
+	sigC := make(chan os.Signal, 1)
+	signal.Notify(sigC, syscall.SIGINT, syscall.SIGTERM)
+
+	select {
+	case err := <-errC:
+		slog.Error("server error", log.ErrorKey, err)
+	case sig := <-sigC:
+		signal.Stop(sigC)
+		slog.Warn(fmt.Sprintf("received signal %v", sig))
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		slog.Info("waiting for shutdown to complete")
+		if err := s.Shutdown(ctx); err != nil {
+			slog.Error("shutting down", log.ErrorKey, err)
+		}
+		slog.Info("shutdown complete")
+	}
+
 	slog.Info("disconnecting from database")
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	store.Close(ctx)
-	slog.Info("shutdown complete")
+
+	slog.Info("exiting")
 	return 0
-}
-
-func shutdown(ctx context.Context, s *http.Server, done chan struct{}) {
-	sigch := make(chan os.Signal, 1)
-	signal.Notify(sigch, syscall.SIGINT, syscall.SIGTERM)
-	sig := <-sigch
-	slog.Warn(fmt.Sprintf("received signal %v", sig))
-
-	childCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
-
-	if err := s.Shutdown(childCtx); err != nil {
-		slog.Error("shutting down", log.ErrorKey, err)
-	}
-	close(done)
 }
