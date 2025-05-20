@@ -27,6 +27,7 @@ resource environment 'Microsoft.App/managedEnvironments@2024-03-01' = {
       destination: 'log-analytics'
       logAnalyticsConfiguration: {
         customerId: logAnalyticsWorkspace.properties.customerId
+        #disable-next-line use-secure-value-for-secure-inputs
         sharedKey: logAnalyticsWorkspace.listKeys().primarySharedKey
       }
     }
