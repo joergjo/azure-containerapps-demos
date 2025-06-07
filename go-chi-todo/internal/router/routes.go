@@ -44,7 +44,7 @@ func getManyHandler(ts model.TodoStore) http.HandlerFunc {
 		}
 		p = r.URL.Query().Get("limit")
 		limit, err := strconv.Atoi(p)
-		if err != nil {
+		if err != nil || limit < 1 {
 			limit = 50
 		}
 		items, err := ts.List(r.Context(), offset, limit)
@@ -78,6 +78,12 @@ func getHandler(ts model.TodoStore) http.HandlerFunc {
 
 func postHandler(ts model.TodoStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Content-Type") != "application/json" {
+			slog.Error("invalid content type", log.ErrorKey, "expected application/json")
+			http.Error(w, http.StatusText(http.StatusUnsupportedMediaType), http.StatusUnsupportedMediaType)
+			return
+		}
+		defer r.Body.Close()
 		var item model.Todo
 		if err := bind(r, &item); err != nil {
 			slog.Error("binding request body", log.ErrorKey, err)
@@ -98,6 +104,12 @@ func postHandler(ts model.TodoStore) http.HandlerFunc {
 
 func putHandler(ts model.TodoStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Content-Type") != "application/json" {
+			slog.Error("invalid content type", log.ErrorKey, "expected application/json")
+			http.Error(w, http.StatusText(http.StatusUnsupportedMediaType), http.StatusUnsupportedMediaType)
+			return
+		}
+		defer r.Body.Close()
 		var item model.Todo
 		if err := bind(r, &item); err != nil {
 			slog.Error("binding request body", log.ErrorKey, err)

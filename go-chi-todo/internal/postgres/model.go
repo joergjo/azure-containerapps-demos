@@ -184,6 +184,20 @@ func (ts *TodoStore) Ping(ctx context.Context) error {
 	return ts.pool.Ping(ctx)
 }
 
-func (ts *TodoStore) Close(ctx context.Context) {
-	ts.pool.Close()
+func (ts *TodoStore) Close(ctx context.Context) error {
+	done := make(chan struct{})
+
+	go func() {
+		defer close(done)
+		ts.pool.Close()
+	}()
+
+	select {
+	case <-done:
+		// Close completed successfully
+		return nil
+	case <-ctx.Done():
+		// Context was cancelled, but we can't really stop the close operation
+		return ctx.Err()
+	}
 }

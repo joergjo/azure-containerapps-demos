@@ -83,7 +83,9 @@ func run(listenAddr string, connString string, debug bool) int {
 	slog.Info("disconnecting from database")
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	store.Close(ctx)
+	if err := store.Close(ctx); err != nil {
+		slog.Warn("closing data store", log.ErrorKey, err)
+	}
 
 	slog.Info("exiting")
 	return 0
