@@ -1,5 +1,6 @@
 PWD = $(shell pwd)
 TOKEN = $(shell az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv)
+IMAGE_TAG = $(shell git rev-parse --short HEAD)
 # Default number of migrations to execute up or down
 N = 2
 
