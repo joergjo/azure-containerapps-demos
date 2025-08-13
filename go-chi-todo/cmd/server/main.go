@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -58,6 +59,7 @@ func run(listenAddr string, connString string, debug bool) int {
 
 	errC := make(chan error, 1)
 	slog.Info(fmt.Sprintf("starting server, listening on %s", listenAddr))
+	slog.Info("configured CPU limit", "GOMAXPROCS", runtime.GOMAXPROCS(0))
 	go func() {
 		errC <- s.ListenAndServe()
 	}()
