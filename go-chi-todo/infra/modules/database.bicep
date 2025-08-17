@@ -9,7 +9,6 @@ param location string
 
 @description('Specifies the PostgreSQL version.')
 @allowed([
-  '12'
   '13'
   '14'
   '15'
@@ -116,6 +115,9 @@ resource firewallRules 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@
     startIpAddress: rule.startIpAddress
     endIpAddress: rule.endIpAddress
   }
+  dependsOn: [
+    postgresAzureADAdmin
+  ]
 }]
 
 output serverFqdn string = postgresServer.properties.fullyQualifiedDomainName

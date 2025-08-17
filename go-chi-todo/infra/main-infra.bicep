@@ -19,13 +19,13 @@ param postgresLoginPassword string
 
 @description('Specifies the PostgreSQL version.')
 @allowed([
-  '12'
   '13'
   '14'
   '15'
   '16'
+  '17'
 ])
-param postgresVersion string = '15'
+param postgresVersion string = '17'
 
 @description('Specifies the Azure AD PostgreSQL administrator user principal name.')
 param aadPostgresAdmin string
@@ -51,7 +51,7 @@ module postgres 'modules/database.bicep' = {
     location: location
     database: database
     postgresLogin: postgresLogin
-    postgresLoginPassword:postgresLoginPassword
+    postgresLoginPassword: postgresLoginPassword
     aadPostgresAdmin: aadPostgresAdmin
     aadPostgresAdminObjectID: aadPostgresAdminObjectID
     clientIP: clientIP
@@ -66,7 +66,7 @@ module environment 'modules/environment.bicep' = {
   name: 'environment'
   params: {
     location: location
-    namePrefix: namePrefix  
+    namePrefix: namePrefix
     infrastructureSubnetId: network.outputs.infraSubnetId
   }
 }
