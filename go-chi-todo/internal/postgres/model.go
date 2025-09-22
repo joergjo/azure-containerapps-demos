@@ -34,7 +34,7 @@ func NewStore(ctx context.Context, connString string) (*TodoStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	config.BeforeAcquire = store.beforeAcquire
+	config.PrepareConn = store.prepareConn
 	config.BeforeConnect = store.beforeConnect
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)
@@ -71,15 +71,15 @@ func (ts *TodoStore) acquireToken(ctx context.Context) (string, error) {
 	return at.Token, nil
 }
 
-func (ts *TodoStore) beforeAcquire(ctx context.Context, conn *pgx.Conn) bool {
+func (ts *TodoStore) prepareConn(ctx context.Context, conn *pgx.Conn) (bool, error) {
 	slog.Debug("BeforeAcquire: Checking access token")
 	token, ok := ts.getAndCheckToken()
 	if token == "" {
 		slog.Debug("BeforeAcquire: No access token set")
-		return true
+		return true, nil
 	}
 	slog.Debug(fmt.Sprintf("BeforeAcquire: Access token still valid: %v", ok))
-	return ok
+	return ok, nil
 }
 
 func (ts *TodoStore) beforeConnect(ctx context.Context, config *pgx.ConnConfig) error {
