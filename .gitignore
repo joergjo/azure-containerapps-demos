@@ -1,4 +1,4 @@
 *.env
 *.envrc
- .DS_Store
+.DS_Store
 .azure/
