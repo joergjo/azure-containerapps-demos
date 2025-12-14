@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"log/slog"
 
@@ -18,6 +19,12 @@ type header struct {
 	name string
 	val  string
 }
+
+const (
+	maxJSONBodyBytes = 1 << 20 // 1 MiB
+	defaultLimit     = 50
+	maxLimit         = 100
+)
 
 func NewMux(ts model.TodoStore) *chi.Mux {
 	r := chi.NewRouter()
@@ -42,10 +49,16 @@ func getManyHandler(ts model.TodoStore) http.HandlerFunc {
 		if err != nil {
 			offset = 0
 		}
+		if offset < 0 {
+			offset = 0
+		}
 		p = r.URL.Query().Get("limit")
 		limit, err := strconv.Atoi(p)
 		if err != nil || limit < 1 {
-			limit = 50
+			limit = defaultLimit
+		}
+		if limit > maxLimit {
+			limit = maxLimit
 		}
 		items, err := ts.List(r.Context(), offset, limit)
 		if err != nil {
@@ -60,7 +73,11 @@ func getManyHandler(ts model.TodoStore) http.HandlerFunc {
 func getHandler(ts model.TodoStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		p := chi.URLParam(r, "id")
-		id, _ := strconv.Atoi(p)
+		id, err := strconv.Atoi(p)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
 		item, err := ts.Find(r.Context(), id)
 		if err != nil {
 			if !errors.Is(err, model.ErrEmptyResultSet) {
@@ -68,7 +85,7 @@ func getHandler(ts model.TodoStore) http.HandlerFunc {
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
-			slog.Info(fmt.Sprintf("item with id %d not found", id))
+			slog.Info("item not found", slog.Int("id", id))
 			http.NotFound(w, r)
 			return
 		}
@@ -78,18 +95,18 @@ func getHandler(ts model.TodoStore) http.HandlerFunc {
 
 func postHandler(ts model.TodoStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Content-Type") != "application/json" {
-			slog.Error("invalid content type", log.ErrorKey, "expected application/json")
-			http.Error(w, http.StatusText(http.StatusUnsupportedMediaType), http.StatusUnsupportedMediaType)
-			return
-		}
 		defer r.Body.Close()
+		r.Body = http.MaxBytesReader(w, r.Body, maxJSONBodyBytes)
 		var item model.Todo
 		if err := bind(r, &item); err != nil {
 			slog.Error("binding request body", log.ErrorKey, err)
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 
+		}
+		if strings.TrimSpace(item.Description) == "" {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
 		}
 		item, err := ts.Create(r.Context(), item)
 		if err != nil {
@@ -104,12 +121,8 @@ func postHandler(ts model.TodoStore) http.HandlerFunc {
 
 func putHandler(ts model.TodoStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Content-Type") != "application/json" {
-			slog.Error("invalid content type", log.ErrorKey, "expected application/json")
-			http.Error(w, http.StatusText(http.StatusUnsupportedMediaType), http.StatusUnsupportedMediaType)
-			return
-		}
 		defer r.Body.Close()
+		r.Body = http.MaxBytesReader(w, r.Body, maxJSONBodyBytes)
 		var item model.Todo
 		if err := bind(r, &item); err != nil {
 			slog.Error("binding request body", log.ErrorKey, err)
@@ -118,16 +131,24 @@ func putHandler(ts model.TodoStore) http.HandlerFunc {
 
 		}
 		p := chi.URLParam(r, "id")
-		id, _ := strconv.Atoi(p)
+		id, err := strconv.Atoi(p)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+		if strings.TrimSpace(item.Description) == "" {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
 		item.Id = int64(id)
-		item, err := ts.Update(r.Context(), item)
+		item, err = ts.Update(r.Context(), item)
 		if err != nil {
 			if !errors.Is(err, model.ErrEmptyResultSet) {
 				slog.Error("updating todo item in store", log.ErrorKey, err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
-			slog.Info(fmt.Sprintf("item with id %d not found", id))
+			slog.Info("item not found", slog.Int("id", id))
 			http.NotFound(w, r)
 			return
 		}
@@ -138,15 +159,19 @@ func putHandler(ts model.TodoStore) http.HandlerFunc {
 func deleteHandler(ts model.TodoStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		p := chi.URLParam(r, "id")
-		id, _ := strconv.Atoi(p)
-		err := ts.Delete(r.Context(), id)
+		id, err := strconv.Atoi(p)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+		err = ts.Delete(r.Context(), id)
 		if err != nil {
 			if !errors.Is(err, model.ErrEmptyResultSet) {
 				slog.Error("deleting from store", log.ErrorKey, err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
-			slog.Info(fmt.Sprintf("item with id %d not found", id))
+			slog.Info("item not found", slog.Int("id", id))
 			http.NotFound(w, r)
 			return
 		}

@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 
@@ -23,9 +22,10 @@ const ossRDBMS = "https://ossrdbms-aad.database.windows.net/.default"
 var defaultOpts = policy.TokenRequestOptions{Scopes: []string{ossRDBMS}}
 
 type TodoStore struct {
-	pool        *pgxpool.Pool
-	accessToken azcore.AccessToken
-	mutex       sync.RWMutex
+	pool         *pgxpool.Pool
+	accessToken  azcore.AccessToken
+	mutex        sync.RWMutex
+	refreshMutex sync.Mutex
 }
 
 func NewStore(ctx context.Context, connString string) (*TodoStore, error) {
@@ -53,51 +53,65 @@ func NewStore(ctx context.Context, connString string) (*TodoStore, error) {
 func (ts *TodoStore) getAndCheckToken() (string, bool) {
 	ts.mutex.RLock()
 	defer ts.mutex.RUnlock()
-	return ts.accessToken.Token, ts.accessToken.ExpiresOn.After(time.Now().UTC())
+	// Refresh slightly before actual expiry to avoid clock skew / mid-request failures.
+	refreshSkew := 2 * time.Minute
+	return ts.accessToken.Token, ts.accessToken.ExpiresOn.After(time.Now().UTC().Add(refreshSkew))
 }
 
 func (ts *TodoStore) acquireToken(ctx context.Context) (string, error) {
+	// Ensure only one goroutine refreshes the token at a time, without holding
+	// the RWMutex during the network call.
+	ts.refreshMutex.Lock()
+	defer ts.refreshMutex.Unlock()
+
+	// Another goroutine may have refreshed while we were waiting.
+	if token, ok := ts.getAndCheckToken(); ok && token != "" {
+		return token, nil
+	}
+
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		return "", err
 	}
-	ts.mutex.Lock()
-	defer ts.mutex.Unlock()
+
 	at, err := cred.GetToken(ctx, defaultOpts)
 	if err != nil {
 		return "", err
 	}
+
+	ts.mutex.Lock()
 	ts.accessToken = at
+	ts.mutex.Unlock()
 	return at.Token, nil
 }
 
 func (ts *TodoStore) prepareConn(ctx context.Context, conn *pgx.Conn) (bool, error) {
-	slog.Debug("BeforeAcquire: Checking access token")
+	slog.Debug("BeforeAcquire: checking access token")
 	token, ok := ts.getAndCheckToken()
 	if token == "" {
-		slog.Debug("BeforeAcquire: No access token set")
+		slog.Debug("BeforeAcquire: no access token set")
 		return true, nil
 	}
-	slog.Debug(fmt.Sprintf("BeforeAcquire: Access token still valid: %v", ok))
+	slog.Debug("BeforeAcquire: access token validity", slog.Bool("valid", ok))
 	return ok, nil
 }
 
 func (ts *TodoStore) beforeConnect(ctx context.Context, config *pgx.ConnConfig) error {
 	if config.Password != "" {
-		slog.Debug("BeforeConnect: Password is set")
+		slog.Debug("BeforeConnect: password is set")
 		return nil
 	}
-	slog.Debug("BeforeConnect: No password set, checking access token")
+	slog.Debug("BeforeConnect: no password set, checking access token")
 	token, ok := ts.getAndCheckToken()
 	if !ok {
-		slog.Debug("BeforeConnect: Acquiring access token")
+		slog.Debug("BeforeConnect: acquiring access token")
 		var err error
 		if token, err = ts.acquireToken(ctx); err != nil {
 			return err
 		}
 	}
 	config.Password = token
-	slog.Info(fmt.Sprintf("Acquired new access token: %s...", config.Password[:10]))
+	slog.Debug("BeforeConnect: configured password from access token")
 	return nil
 }
 
@@ -185,6 +199,10 @@ func (ts *TodoStore) Ping(ctx context.Context) error {
 }
 
 func (ts *TodoStore) Close(ctx context.Context) error {
+	if ts.pool == nil {
+		return nil
+	}
+
 	done := make(chan struct{})
 
 	go func() {

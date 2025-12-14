@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"net/http"
 	"os"
 	"os/signal"
@@ -42,7 +42,9 @@ func run(listenAddr string, connString string, debug bool) int {
 		listenAddr = ":8080"
 	}
 
-	store, err := postgres.NewStore(context.Background(), connString)
+	startupCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	store, err := postgres.NewStore(startupCtx, connString)
 	if err != nil {
 		slog.Error("initializing data store", log.ErrorKey, err)
 		return 1
@@ -58,21 +60,28 @@ func run(listenAddr string, connString string, debug bool) int {
 	}
 
 	errC := make(chan error, 1)
-	slog.Info(fmt.Sprintf("starting server, listening on %s", listenAddr))
+	slog.Info("starting server", slog.String("addr", listenAddr))
 	slog.Info("configured CPU limit", "GOMAXPROCS", runtime.GOMAXPROCS(0))
 	go func() {
-		errC <- s.ListenAndServe()
+		defer close(errC)
+		if err := s.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			errC <- err
+		}
 	}()
 
 	sigC := make(chan os.Signal, 1)
 	signal.Notify(sigC, syscall.SIGINT, syscall.SIGTERM)
 
 	select {
-	case err := <-errC:
+	case err, ok := <-errC:
+		if !ok {
+			break
+		}
 		slog.Error("server error", log.ErrorKey, err)
+		return 1
 	case sig := <-sigC:
 		signal.Stop(sigC)
-		slog.Warn(fmt.Sprintf("received signal %v", sig))
+		slog.Warn("received signal", slog.String("signal", sig.String()))
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 		slog.Info("waiting for shutdown to complete")

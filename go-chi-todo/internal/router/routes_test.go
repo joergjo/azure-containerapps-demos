@@ -116,14 +116,12 @@ func TestGetManyBooks(t *testing.T) {
 			r := httptest.NewRequest(http.MethodGet, "/todo", nil)
 			ts := &mockTodoStore{
 				listFn: func(ctx context.Context, offset int, limit int) ([]model.Todo, error) {
-					return tc.result, nil
+					return tc.result, tc.err
 				},
 			}
 			getManyHandler(ts).ServeHTTP(w, r)
-			got := w.Result().StatusCode
-			want := http.StatusOK
-			if got != want {
-				t.Fatalf("Want status code %d, got %d", want, got)
+			if got := w.Result().StatusCode; got != tc.want {
+				t.Fatalf("Want status code %d, got %d", tc.want, got)
 			}
 
 		})
@@ -170,7 +168,8 @@ func TestGetBook(t *testing.T) {
 					return tc.result, tc.err
 				},
 			}
-			getHandler(ts).ServeHTTP(w, r)
+			mux := NewMux(ts)
+			mux.ServeHTTP(w, r)
 			if got := w.Result().StatusCode; got != tc.want {
 				t.Fatalf("Want status code %d, got %d", tc.want, got)
 			}
