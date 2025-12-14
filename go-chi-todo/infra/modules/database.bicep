@@ -58,7 +58,7 @@ var firewallrules = [
   }
 ]
 
-resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
+resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2025-08-01' = {
   name: server
   location: location
   sku: {
@@ -92,12 +92,12 @@ resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' =
   }
 }
 
-resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-01' = if (deployDatabase) {
+resource postgresDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2025-08-01' = if (deployDatabase) {
   name: database
   parent: postgresServer
 }
 
-resource postgresAzureADAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2024-08-01' = {
+resource postgresAzureADAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2025-08-01' = {
   name: aadPostgresAdminObjectID
   parent: postgresServer
   properties: {
@@ -108,7 +108,7 @@ resource postgresAzureADAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/adminis
 }
 
 @batchSize(1)
-resource firewallRules 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01' = [for rule in firewallrules: if (deployAsPublic)  {
+resource firewallRules 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2025-08-01' = [for rule in firewallrules: if (deployAsPublic)  {
   name: rule.name
   parent: postgresServer
   properties: {
