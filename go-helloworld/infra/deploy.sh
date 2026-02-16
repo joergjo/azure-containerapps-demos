@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+
 if [ -z "$CONTAINERAPP_RESOURCE_GROUP_NAME" ]; then
     echo "CONTAINERAPP_RESOURCE_GROUP_NAME is not set. Please set it to the name of the resource group to deploy to."
     exit 1
