@@ -6,7 +6,7 @@ deploy:
 
 PHONY: destroy 
 destroy:
-	az group delete --name ${CONTAINERAPP_RESOURCE_GROUP} --yes --no-wait
+	az group delete --name ${CONTAINERAPP_RESOURCE_GROUP_NAME} --yes --no-wait
 
 PHONY: fmt 
 fmt:
