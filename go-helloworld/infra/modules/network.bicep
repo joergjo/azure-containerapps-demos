@@ -21,6 +21,14 @@ resource vnet 'Microsoft.Network/virtualNetworks@2025-05-01' = {
           networkSecurityGroup: {
             id: networkSecurityGroup.id
           }
+          delegations: [
+            {
+              name: 'Microsoft.App/environments'
+              properties: {
+                serviceName: 'Microsoft.App/environments'
+              }
+            }
+          ]
         }
       }
     ]
