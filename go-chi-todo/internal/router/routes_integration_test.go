@@ -147,8 +147,7 @@ func TestGetManyTodo(t *testing.T) {
 			}
 
 			items := []json.RawMessage{}
-			json.Unmarshal(body, &items) // Just to check if the response is valid JSON
-			if err != nil {
+			if err := json.Unmarshal(body, &items); err != nil {
 				t.Fatalf("failed to unmarshal response body: %v", err)
 			}
 
