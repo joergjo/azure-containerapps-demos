@@ -19,11 +19,11 @@ param postgresLoginPassword string
 
 @description('Specifies the PostgreSQL version.')
 @allowed([
-  '13'
   '14'
   '15'
   '16'
   '17'
+  '18'
 ])
 param postgresVersion string = '17'
 

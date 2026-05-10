@@ -9,13 +9,13 @@ param location string
 
 @description('Specifies the PostgreSQL version.')
 @allowed([
-  '13'
   '14'
   '15'
   '16'
   '17'
+  '18'
 ])
-param version string = '16'
+param version string = '17'
 
 @description('Specifies the PostgreSQL administrator login name.')
 @secure()

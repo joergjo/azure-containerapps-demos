@@ -50,7 +50,7 @@ func runPostgres(ctx context.Context, img string) (*postgres.PostgresContainer, 
 
 func TestGetManyTodo(t *testing.T) {
 	ctx := context.Background()
-	pgContainer, err := runPostgres(ctx, "postgres:16-alpine")
+	pgContainer, err := runPostgres(ctx, "postgres:17-alpine")
 	if err != nil {
 		t.Fatalf("failed to initialize Postgres container: %v", err)
 	}
@@ -160,7 +160,7 @@ func TestGetManyTodo(t *testing.T) {
 
 func TestGetSingleTodo(t *testing.T) {
 	ctx := context.Background()
-	pgContainer, err := runPostgres(ctx, "postgres:16-alpine")
+	pgContainer, err := runPostgres(ctx, "postgres:17-alpine")
 	if err != nil {
 		t.Fatalf("failed to initialize Postgres container: %v", err)
 	}
@@ -250,7 +250,7 @@ func TestGetSingleTodo(t *testing.T) {
 
 func TestPostTodo(t *testing.T) {
 	ctx := context.Background()
-	pgContainer, err := runPostgres(ctx, "postgres:16-alpine")
+	pgContainer, err := runPostgres(ctx, "postgres:17-alpine")
 	if err != nil {
 		t.Fatalf("failed to initialize Postgres container: %v", err)
 	}
@@ -336,7 +336,7 @@ func TestPostTodo(t *testing.T) {
 
 func TestPutTodo(t *testing.T) {
 	ctx := context.Background()
-	pgContainer, err := runPostgres(ctx, "postgres:16-alpine")
+	pgContainer, err := runPostgres(ctx, "postgres:17-alpine")
 	if err != nil {
 		t.Fatalf("failed to initialize Postgres container: %v", err)
 	}
@@ -445,7 +445,7 @@ func TestPutTodo(t *testing.T) {
 
 func TestDeleteTodo(t *testing.T) {
 	ctx := context.Background()
-	pgContainer, err := runPostgres(ctx, "postgres:16-alpine")
+	pgContainer, err := runPostgres(ctx, "postgres:17-alpine")
 	if err != nil {
 		t.Fatalf("failed to initialize Postgres container: %v", err)
 	}
