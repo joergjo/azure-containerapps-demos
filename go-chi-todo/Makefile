@@ -1,6 +1,8 @@
 PWD = $(shell pwd)
 TOKEN = $(shell az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv)
-IMAGE_TAG = sha-$(shell git rev-parse --short HEAD)
+VCS_REVISION = $(shell git rev-parse --short HEAD)
+VCS_DATE = $(shell git show -s --format=%cI HEAD)
+IMAGE_TAG = $(VCS_REVISION)
 # Default number of migrations to execute up or down
 N = 2
 
@@ -51,4 +53,4 @@ migrate-docker-force:
 
 .PHONY: build-image
 build-image:
-	docker buildx build --platform linux/amd64,linux/arm64 -t $(IMAGE_NAME):$(IMAGE_TAG) -t $(IMAGE_NAME):latest --push .
+	docker buildx build --platform linux/amd64,linux/arm64 -t $(IMAGE_NAME):$(IMAGE_TAG) -t $(IMAGE_NAME):latest --push --build-arg VCS_REVISION="$(VCS_REVISION)" --build-arg VCS_DATE="$(VCS_DATE)" \.

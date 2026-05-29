@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"syscall"
 	"time"
@@ -18,21 +19,31 @@ import (
 	"github.com/joergjo/azure-containerapps-demos/go-chi-todo/internal/router"
 )
 
+var (
+	vcsRevision string
+	vcsDate     string
+)
+
 func main() {
-	debug := false
-	debugEnv := strings.ToLower(os.Getenv("TODO_DEBUG"))
-	if debugEnv == "yes" || debugEnv == "true" || debugEnv == "on" || debugEnv == "1" {
-		debug = true
+	dbg := false
+	dbgEnv := strings.ToLower(os.Getenv("TODO_DEBUG"))
+	if dbgEnv == "yes" || dbgEnv == "true" || dbgEnv == "on" || dbgEnv == "1" {
+		dbg = true
 	}
 
 	connString := os.Getenv("TODO_CONN_STRING")
 	listenAddr := os.Getenv("TODO_LISTEN_ADDR")
 
-	os.Exit(run(listenAddr, connString, debug))
+	os.Exit(run(listenAddr, connString, dbg))
 }
 
-func run(listenAddr string, connString string, debug bool) int {
-	slog.SetDefault(slog.New(log.NewStructured(os.Stderr, debug)))
+func run(listenAddr string, connString string, dbg bool) int {
+	slog.SetDefault(slog.New(log.NewStructured(os.Stderr, dbg)))
+
+	info, ok := debug.ReadBuildInfo()
+	if ok {
+		slog.Info("todo-api", "revision", commitInfo(info, "vcs.revision", vcsRevision), "date", commitInfo(info, "vcs.time", vcsDate), "goVersion", runtime.Version(), "goMaxProcs", runtime.GOMAXPROCS(0))
+	}
 
 	if connString == "" {
 		slog.Info("no connection string specified, using pqlib style PG* environment variables instead")
@@ -100,4 +111,13 @@ func run(listenAddr string, connString string, debug bool) int {
 
 	slog.Info("exiting")
 	return 0
+}
+
+func commitInfo(info *debug.BuildInfo, key string, fallback string) string {
+	for _, s := range info.Settings {
+		if s.Key == key {
+			return s.Value
+		}
+	}
+	return fallback
 }
