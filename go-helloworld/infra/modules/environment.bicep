@@ -2,7 +2,7 @@
 param namePrefix string
 
 @description('Specifies the location to deploy to.')
-param location string 
+param location string
 
 @description('Specifies the subnet resource ID for the Container App environment.')
 param infrastructureSubnetId string
