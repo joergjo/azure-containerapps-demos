@@ -72,6 +72,8 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /hello", hello(l))
 	mux.HandleFunc("GET /about", about(l, enableAbout))
+	mux.HandleFunc("GET /fail", fail(l, "Something went wrong"))
+	mux.HandleFunc("GET /fatal", fatal(l, "Something went fatally wrong"))
 	mux.HandleFunc("GET /", probe(l, "OK"))
 
 	addr := fmt.Sprintf(":%d", *port)
@@ -119,5 +121,19 @@ func probe(l log.FieldLogger, msg string) http.HandlerFunc {
 		l.Printf("Sending %q", msg)
 		w.Header().Set("Content-Type", "text/plain")
 		fmt.Fprint(w, msg)
+	}
+}
+
+func fail(l log.FieldLogger, msg string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		l.Error(msg)
+		w.Header().Set("Content-Type", "text/plain")
+		http.Error(w, msg, http.StatusInternalServerError)
+	}
+}
+
+func fatal(l log.FieldLogger, msg string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		l.Fatal(msg)
 	}
 }
