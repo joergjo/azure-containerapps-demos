@@ -1,5 +1,5 @@
-volumes:
-  todo-data:
+include:
+  - compose.db.yaml
 
 services:
   todo-api:
@@ -18,13 +18,3 @@ services:
       - TODO_DEBUG=${TODO_DEBUG:-true}
     depends_on:
       - todo-db
-
-  todo-db:
-    image: postgres:${POSTGRES_TAG:-17-alpine}
-    ports:
-      - "5432:5432"
-    volumes:
-      - todo-data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_PASSWORD=pass@word1
-      - POSTGRES_DB=todo
