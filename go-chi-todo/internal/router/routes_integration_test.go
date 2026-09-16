@@ -3,9 +3,9 @@ package router_test
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -141,13 +141,8 @@ func TestGetManyTodo(t *testing.T) {
 				t.Errorf("want status code %d, got %d", tc.want, resp.StatusCode)
 			}
 
-			body, err := io.ReadAll(resp.Body)
-			if err != nil {
-				t.Fatalf("failed to read response body: %v", err)
-			}
-
-			items := []json.RawMessage{}
-			if err := json.Unmarshal(body, &items); err != nil {
+			items := []jsontext.Value{}
+			if err := json.UnmarshalRead(resp.Body, &items); err != nil {
 				t.Fatalf("failed to unmarshal response body: %v", err)
 			}
 
@@ -235,12 +230,8 @@ func TestGetSingleTodo(t *testing.T) {
 			}
 
 			if resp.StatusCode == http.StatusOK {
-				body, err := io.ReadAll(resp.Body)
-				if err != nil {
-					t.Fatalf("failed to read response body: %v", err)
-				}
-				var item json.RawMessage
-				if err := json.Unmarshal(body, &item); err != nil {
+				var item jsontext.Value
+				if err := json.UnmarshalRead(resp.Body, &item); err != nil {
 					t.Errorf("failed to unmarshal response body: %v", err)
 				}
 			}
@@ -267,7 +258,7 @@ func TestPostTodo(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		item        json.RawMessage // Use json.RawMessage to handle arbitrary JSON input
+		item        jsontext.Value
 		contentType string
 		want        int
 	}{
@@ -354,7 +345,7 @@ func TestPutTodo(t *testing.T) {
 	tests := []struct {
 		name        string
 		id          string
-		item        json.RawMessage // Use json.RawMessage to handle arbitrary JSON input
+		item        jsontext.Value
 		contentType string
 		want        int
 	}{
@@ -430,12 +421,8 @@ func TestPutTodo(t *testing.T) {
 			}
 
 			if resp.StatusCode == http.StatusOK {
-				body, err := io.ReadAll(resp.Body)
-				if err != nil {
-					t.Fatalf("failed to read response body: %v", err)
-				}
-				var item json.RawMessage
-				if err := json.Unmarshal(body, &item); err != nil {
+				var item jsontext.Value
+				if err := json.UnmarshalRead(resp.Body, &item); err != nil {
 					t.Errorf("failed to unmarshal response body: %v", err)
 				}
 			}

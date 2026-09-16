@@ -3,7 +3,7 @@ package router
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -226,15 +226,14 @@ func TestPostBook(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			var buf *bytes.Buffer
+			var buf bytes.Buffer
 			if tc.in != nil {
-				b, err := json.Marshal(tc.in)
+				err := json.MarshalWrite(&buf, tc.in)
 				if err != nil {
 					t.Fatalf("marshalling input: %v", err)
 				}
-				buf = bytes.NewBuffer(b)
 			}
-			r := httptest.NewRequest(http.MethodPost, "/todo", buf)
+			r := httptest.NewRequest(http.MethodPost, "/todo", &buf)
 			r.Header.Set("Content-Type", "application/json")
 			ts := &mockTodoStore{
 				createFn: func(ctx context.Context, item model.Todo) (model.Todo, error) {
@@ -299,15 +298,14 @@ func TestPutBook(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			var buf *bytes.Buffer
+			var buf bytes.Buffer
 			if tc.in != nil {
-				b, err := json.Marshal(tc.in)
+				err := json.MarshalWrite(&buf, tc.in)
 				if err != nil {
 					t.Fatalf("marshalling input: %v", err)
 				}
-				buf = bytes.NewBuffer(b)
 			}
-			r := httptest.NewRequest(http.MethodPut, "/todo/1", buf)
+			r := httptest.NewRequest(http.MethodPut, "/todo/1", &buf)
 			r.Header.Set("Content-Type", "application/json")
 			ts := &mockTodoStore{
 				updateFn: func(ctx context.Context, item model.Todo) (model.Todo, error) {
