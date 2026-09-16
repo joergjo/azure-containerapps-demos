@@ -5,6 +5,10 @@ import (
 	"log/slog"
 )
 
+const (
+	ErrorKey = "error"
+)
+
 func NewStructured(w io.Writer, debug bool) *slog.JSONHandler {
 	opts := slog.HandlerOptions{
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
