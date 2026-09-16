@@ -21,31 +21,25 @@ func TestRespond(t *testing.T) {
 		args
 	}{
 		{
-			name: "single_todo_no_header",
-			args: args{
-				data:   model.Todo{Id: 1, Description: "test", Details: "a test", Done: false},
-				header: nil,
-				body:   `{"id":1,"description":"test","details":"a test","done":false}`,
-			},
+			name:   "single_todo_no_header",
+			data:   model.Todo{Id: 1, Description: "test", Details: "a test", Done: false},
+			header: nil,
+			body:   `{"id":1,"description":"test","details":"a test","done":false}`,
 		},
 		{
-			name: "single_todo_location_header",
-			args: args{
-				data:   model.Todo{Id: 1, Description: "test", Details: "a test", Done: false},
-				header: []header{{name: "Location", val: "/todo/1"}},
-				body:   `{"id":1,"description":"test","details":"a test","done":false}`,
-			},
+			name:   "single_todo_location_header",
+			data:   model.Todo{Id: 1, Description: "test", Details: "a test", Done: false},
+			header: []header{{name: "Location", val: "/todo/1"}},
+			body:   `{"id":1,"description":"test","details":"a test","done":false}`,
 		},
 		{
 			name: "single_todo_multiple_headers",
-			args: args{
-				data: model.Todo{Id: 1, Description: "test", Details: "a test", Done: false},
-				header: []header{
-					{name: "Location", val: "/todo/1"},
-					{name: "Cache-Control", val: "no-cache"},
-				},
-				body: `{"id":1,"description":"test","details":"a test","done":false}`,
+			data: model.Todo{Id: 1, Description: "test", Details: "a test", Done: false},
+			header: []header{
+				{name: "Location", val: "/todo/1"},
+				{name: "Cache-Control", val: "no-cache"},
 			},
+			body: `{"id":1,"description":"test","details":"a test","done":false}`,
 		},
 	}
 	for _, tc := range tests {
