@@ -63,7 +63,7 @@ var secretNames = map(secrets, s => s.name)
 var envVars = filter(allEnvVars, e => (contains(e, 'secretRef') && contains(secretNames, any(e).secretRef)) || contains(e, 'value') && !empty(any(e).value))
 var port = 8080
 
-resource containerApp 'Microsoft.App/containerApps@2025-07-01' = {
+resource containerApp 'Microsoft.App/containerApps@2026-07-01' = {
   name: name
   location: location
   identity: {
