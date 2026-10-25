@@ -2,7 +2,7 @@ PWD = $(shell pwd)
 TOKEN = $(shell az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv)
 VCS_REVISION = $(shell git rev-parse --short HEAD)
 VCS_DATE = $(shell git show -s --format=%cI HEAD)
-IMAGE_TAG = $(VCS_REVISION)
+IMAGE_TAG = sha-$(VCS_REVISION)
 # Default number of migrations to execute up or down
 N = 2
 
